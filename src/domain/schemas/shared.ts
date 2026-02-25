@@ -62,8 +62,17 @@ export type AttachmentId = Schema.Schema.Type<typeof AttachmentId>
 export const BlobId = HulyRef("BlobId")
 export type BlobId = Schema.Schema.Type<typeof BlobId>
 
+export const CardId = HulyRef("CardId")
+export type CardId = Schema.Schema.Type<typeof CardId>
+
+export const CardSpaceId = HulyRef("CardSpaceId")
+export type CardSpaceId = Schema.Schema.Type<typeof CardSpaceId>
+
 export const DocumentId = HulyRef("DocumentId")
 export type DocumentId = Schema.Schema.Type<typeof DocumentId>
+
+export const MasterTagId = HulyRef("MasterTagId")
+export type MasterTagId = Schema.Schema.Type<typeof MasterTagId>
 
 export const TeamspaceId = HulyRef("TeamspaceId")
 export type TeamspaceId = Schema.Schema.Type<typeof TeamspaceId>
@@ -193,8 +202,17 @@ export type ChannelIdentifier = Schema.Schema.Type<typeof ChannelIdentifier>
 export const TeamspaceIdentifier = NonEmptyString.pipe(Schema.brand("TeamspaceIdentifier"))
 export type TeamspaceIdentifier = Schema.Schema.Type<typeof TeamspaceIdentifier>
 
+export const CardIdentifier = NonEmptyString.pipe(Schema.brand("CardIdentifier"))
+export type CardIdentifier = Schema.Schema.Type<typeof CardIdentifier>
+
+export const CardSpaceIdentifier = NonEmptyString.pipe(Schema.brand("CardSpaceIdentifier"))
+export type CardSpaceIdentifier = Schema.Schema.Type<typeof CardSpaceIdentifier>
+
 export const DocumentIdentifier = NonEmptyString.pipe(Schema.brand("DocumentIdentifier"))
 export type DocumentIdentifier = Schema.Schema.Type<typeof DocumentIdentifier>
+
+export const MasterTagIdentifier = NonEmptyString.pipe(Schema.brand("MasterTagIdentifier"))
+export type MasterTagIdentifier = Schema.Schema.Type<typeof MasterTagIdentifier>
 
 export const TagIdentifier = NonEmptyString.pipe(Schema.brand("TagIdentifier"))
 export type TagIdentifier = Schema.Schema.Type<typeof TagIdentifier>

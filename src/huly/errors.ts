@@ -336,6 +336,41 @@ export class AttachmentNotFoundError extends Schema.TaggedError<AttachmentNotFou
   }
 }
 
+export class CardSpaceNotFoundError extends Schema.TaggedError<CardSpaceNotFoundError>()(
+  "CardSpaceNotFoundError",
+  {
+    identifier: Schema.String
+  }
+) {
+  override get message(): string {
+    return `Card space '${this.identifier}' not found`
+  }
+}
+
+export class CardNotFoundError extends Schema.TaggedError<CardNotFoundError>()(
+  "CardNotFoundError",
+  {
+    identifier: Schema.String,
+    cardSpace: Schema.String
+  }
+) {
+  override get message(): string {
+    return `Card '${this.identifier}' not found in card space '${this.cardSpace}'`
+  }
+}
+
+export class MasterTagNotFoundError extends Schema.TaggedError<MasterTagNotFoundError>()(
+  "MasterTagNotFoundError",
+  {
+    identifier: Schema.String,
+    cardSpace: Schema.String
+  }
+) {
+  override get message(): string {
+    return `Master tag '${this.identifier}' not found in card space '${this.cardSpace}'`
+  }
+}
+
 export class TagNotFoundError extends Schema.TaggedError<TagNotFoundError>()(
   "TagNotFoundError",
   {
@@ -481,6 +516,9 @@ export type HulyDomainError =
   | ReactionNotFoundError
   | SavedMessageNotFoundError
   | AttachmentNotFoundError
+  | CardSpaceNotFoundError
+  | CardNotFoundError
+  | MasterTagNotFoundError
   | TagNotFoundError
   | ComponentNotFoundError
   | IssueTemplateNotFoundError
@@ -519,6 +557,9 @@ export const HulyDomainError: Schema.Union<
     typeof ReactionNotFoundError,
     typeof SavedMessageNotFoundError,
     typeof AttachmentNotFoundError,
+    typeof CardSpaceNotFoundError,
+    typeof CardNotFoundError,
+    typeof MasterTagNotFoundError,
     typeof TagNotFoundError,
     typeof ComponentNotFoundError,
     typeof IssueTemplateNotFoundError,
@@ -553,6 +594,9 @@ export const HulyDomainError: Schema.Union<
   ReactionNotFoundError,
   SavedMessageNotFoundError,
   AttachmentNotFoundError,
+  CardSpaceNotFoundError,
+  CardNotFoundError,
+  MasterTagNotFoundError,
   TagNotFoundError,
   ComponentNotFoundError,
   IssueTemplateNotFoundError,

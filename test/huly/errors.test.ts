@@ -5,6 +5,8 @@ import {
   ActivityMessageNotFoundError,
   AttachmentNotFoundError,
   BYTES_PER_MB,
+  CardNotFoundError,
+  CardSpaceNotFoundError,
   ChannelNotFoundError,
   CommentNotFoundError,
   ComponentNotFoundError,
@@ -25,6 +27,7 @@ import {
   InvalidStatusError,
   IssueNotFoundError,
   IssueTemplateNotFoundError,
+  MasterTagNotFoundError,
   MessageNotFoundError,
   MilestoneNotFoundError,
   NotificationContextNotFoundError,
@@ -660,6 +663,12 @@ describe("Huly Errors", () => {
               return `saved:${error.messageId}`
             case "AttachmentNotFoundError":
               return `attachment:${error.attachmentId}`
+            case "CardSpaceNotFoundError":
+              return `cardspace:${error.identifier}`
+            case "CardNotFoundError":
+              return `card:${error.identifier}`
+            case "MasterTagNotFoundError":
+              return `mastertag:${error.identifier}`
             case "TagNotFoundError":
               return `tag:${error.identifier}`
             case "ComponentNotFoundError":
@@ -707,6 +716,11 @@ describe("Huly Errors", () => {
         expect(matchError(new ReactionNotFoundError({ messageId: "msg-1", emoji: "heart" }))).toBe("reaction:heart")
         expect(matchError(new SavedMessageNotFoundError({ messageId: "sm-1" }))).toBe("saved:sm-1")
         expect(matchError(new AttachmentNotFoundError({ attachmentId: "att-1" }))).toBe("attachment:att-1")
+        expect(matchError(new CardSpaceNotFoundError({ identifier: "cs-1" }))).toBe("cardspace:cs-1")
+        expect(matchError(new CardNotFoundError({ identifier: "card-1", cardSpace: "cs-1" }))).toBe("card:card-1")
+        expect(
+          matchError(new MasterTagNotFoundError({ identifier: "mt-1", cardSpace: "cs-1" }))
+        ).toBe("mastertag:mt-1")
         expect(matchError(new TagNotFoundError({ identifier: "lbl-1" }))).toBe("tag:lbl-1")
         expect(matchError(new ComponentNotFoundError({ identifier: "cmp-1", project: "P" }))).toBe("component:cmp-1")
         expect(matchError(new IssueTemplateNotFoundError({ identifier: "tpl-1", project: "P" }))).toBe("template:tpl-1")

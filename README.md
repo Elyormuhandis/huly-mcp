@@ -136,7 +136,7 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npx -y @firfi/huly-m
 <!-- tools:start -->
 ## Available Tools
 
-**`TOOLSETS` categories:** `projects`, `issues`, `comments`, `milestones`, `documents`, `storage`, `attachments`, `contacts`, `channels`, `calendar`, `time tracking`, `search`, `activity`, `notifications`, `workspace`, `labels`
+**`TOOLSETS` categories:** `projects`, `issues`, `comments`, `milestones`, `documents`, `storage`, `attachments`, `contacts`, `channels`, `calendar`, `time tracking`, `search`, `activity`, `notifications`, `workspace`, `cards`, `labels`
 
 ### Projects
 
@@ -330,6 +330,18 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npx -y @firfi/huly-m
 | `update_user_profile` | Update the current user's profile. Supports bio, city, country, website, social links, and public visibility. |
 | `update_guest_settings` | Update workspace guest settings. Control read-only guest access and guest sign-up permissions. |
 | `get_regions` | Get available regions for workspace creation. Returns region codes and display names. |
+
+### Cards
+
+| Tool | Description |
+|------|-------------|
+| `list_card_spaces` | List all Huly card spaces. Returns card spaces sorted by name. Card spaces are containers for cards. |
+| `list_master_tags` | List master tags (card types) available in a Huly card space. Master tags define the type/schema of cards that can be created in a space. |
+| `list_cards` | List cards in a Huly card space. Returns cards sorted by modification date (newest first). Supports filtering by type (master tag), title substring, and content search. |
+| `get_card` | Retrieve full details for a Huly card including markdown content. Use this to view card content and metadata. |
+| `create_card` | Create a new card in a Huly card space. Requires a master tag (card type). Content supports markdown formatting. Returns the created card id. |
+| `update_card` | Update fields on an existing Huly card. Only provided fields are modified. Content updates support markdown. |
+| `delete_card` | Permanently delete a Huly card. This action cannot be undone. |
 
 ### Labels
 
