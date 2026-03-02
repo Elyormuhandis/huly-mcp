@@ -136,7 +136,7 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npx -y @firfi/huly-m
 <!-- tools:start -->
 ## Available Tools
 
-**`TOOLSETS` categories:** `projects`, `issues`, `comments`, `milestones`, `documents`, `storage`, `attachments`, `contacts`, `channels`, `calendar`, `time tracking`, `search`, `activity`, `notifications`, `workspace`, `cards`, `labels`
+**`TOOLSETS` categories:** `projects`, `issues`, `comments`, `milestones`, `documents`, `storage`, `attachments`, `contacts`, `channels`, `calendar`, `time tracking`, `search`, `activity`, `notifications`, `workspace`, `cards`, `labels`, `tag-categories`
 
 ### Projects
 
@@ -351,6 +351,15 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npx -y @firfi/huly-m
 | `create_label` | Create a new label/tag definition in the workspace. Labels are global and can be attached to any issue. Returns existing label if one with the same title already exists (created=false). Use add_issue_label to attach a label to a specific issue. |
 | `update_label` | Update a label/tag definition. Accepts label ID or title. Only provided fields are modified. |
 | `delete_label` | Permanently delete a label/tag definition. Accepts label ID or title. This action cannot be undone. |
+
+### Tag-Categories
+
+| Tool | Description |
+|------|-------------|
+| `list_tag_categories` | List tag/label categories in the workspace. Categories group labels (e.g., 'Priority Labels', 'Type Labels'). Optional targetClass filter (defaults to all). |
+| `create_tag_category` | Create a new tag/label category. Idempotent: returns existing category if one with the same label and targetClass already exists (created=false). Defaults targetClass to tracker issues. |
+| `update_tag_category` | Update a tag/label category. Accepts category ID or label name. Only provided fields are modified. |
+| `delete_tag_category` | Permanently delete a tag/label category. Accepts category ID or label name. Labels in this category will be orphaned (not deleted). This action cannot be undone. |
 
 <!-- tools:end -->
 
