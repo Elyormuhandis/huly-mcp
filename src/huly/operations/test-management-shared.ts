@@ -33,9 +33,16 @@ import {
 } from "../test-management-types.js"
 import { findPersonByEmailOrName, toRef } from "./shared.js"
 
+import type {
+  TestCasePriorityStr,
+  TestCaseStatusStr,
+  TestCaseTypeStr,
+  TestRunStatusStr
+} from "../../domain/schemas/test-management-core.js"
+
 // --- Bidirectional enum maps ---
 
-const caseTypeToString: Record<TestCaseType, string> = {
+const caseTypeToString: Record<TestCaseType, TestCaseTypeStr> = {
   [CaseType.Functional]: "functional",
   [CaseType.Performance]: "performance",
   [CaseType.Regression]: "regression",
@@ -48,10 +55,10 @@ const stringToCaseType: Record<string, TestCaseType> = Object.fromEntries(
   Object.entries(caseTypeToString).map(([k, v]) => [v, Number(k) as TestCaseType])
 )
 
-export const testCaseTypeToString = (t: TestCaseType): string => caseTypeToString[t]
+export const testCaseTypeToString = (t: TestCaseType): TestCaseTypeStr => caseTypeToString[t]
 export const stringToTestCaseType = (s: string): TestCaseType | undefined => stringToCaseType[s.toLowerCase()]
 
-const casePriorityToString: Record<TestCasePriority, string> = {
+const casePriorityToString: Record<TestCasePriority, TestCasePriorityStr> = {
   [CasePriority.Low]: "low",
   [CasePriority.Medium]: "medium",
   [CasePriority.High]: "high",
@@ -62,11 +69,11 @@ const stringToCasePriority: Record<string, TestCasePriority> = Object.fromEntrie
   Object.entries(casePriorityToString).map(([k, v]) => [v, Number(k) as TestCasePriority])
 )
 
-export const testCasePriorityToString = (p: TestCasePriority): string => casePriorityToString[p]
+export const testCasePriorityToString = (p: TestCasePriority): TestCasePriorityStr => casePriorityToString[p]
 export const stringToTestCasePriority = (s: string): TestCasePriority | undefined =>
   stringToCasePriority[s.toLowerCase()]
 
-const caseStatusToString: Record<TestCaseStatus, string> = {
+const caseStatusToString: Record<TestCaseStatus, TestCaseStatusStr> = {
   [CaseStatus.Draft]: "draft",
   [CaseStatus.ReadyForReview]: "ready-for-review",
   [CaseStatus.FixReviewComments]: "fix-review-comments",
@@ -78,10 +85,10 @@ const stringToCaseStatus: Record<string, TestCaseStatus> = Object.fromEntries(
   Object.entries(caseStatusToString).map(([k, v]) => [v, Number(k) as TestCaseStatus])
 )
 
-export const testCaseStatusToString = (s: TestCaseStatus): string => caseStatusToString[s]
+export const testCaseStatusToString = (s: TestCaseStatus): TestCaseStatusStr => caseStatusToString[s]
 export const stringToTestCaseStatus = (s: string): TestCaseStatus | undefined => stringToCaseStatus[s.toLowerCase()]
 
-const runStatusToString: Record<TestRunStatus, string> = {
+const runStatusToString: Record<TestRunStatus, TestRunStatusStr> = {
   [RunStatus.Untested]: "untested",
   [RunStatus.Blocked]: "blocked",
   [RunStatus.Passed]: "passed",
@@ -92,7 +99,7 @@ const stringToRunStatus: Record<string, TestRunStatus> = Object.fromEntries(
   Object.entries(runStatusToString).map(([k, v]) => [v, Number(k) as TestRunStatus])
 )
 
-export const testRunStatusToString = (s: TestRunStatus): string => runStatusToString[s]
+export const testRunStatusToString = (s: TestRunStatus): TestRunStatusStr => runStatusToString[s]
 export const stringToTestRunStatus = (s: string): TestRunStatus | undefined => stringToRunStatus[s.toLowerCase()]
 
 // --- Finder helpers ---
