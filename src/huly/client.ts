@@ -326,6 +326,7 @@ export class HulyClient extends Context.Tag("@hulymcp/HulyClient")<
     const noopFetchMarkup = (): Effect.Effect<string, HulyClientError> => Effect.succeed("")
 
     const defaultOps: HulyClientOperations = {
+      // AccountUuid is a double-branded string type with no public constructor
       getAccountUuid: () => "test-account-uuid" as AccountUuid,
       findAll: noopFindAll,
       findOne: noopFindOne,
@@ -414,6 +415,8 @@ const connectRest = async (
     serverConfig
   )
 
+  // createRestTxOperations also calls getAccount() internally but doesn't expose it.
+  // Extra call here is one-time at connection startup; acceptable to avoid reimplementing SDK internals.
   const restClient = createRestClient(endpoint, workspaceId, token)
   const account = await restClient.getAccount()
 

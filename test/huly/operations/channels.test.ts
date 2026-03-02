@@ -562,6 +562,7 @@ describe("createChannel", () => {
       expect(captureCreateDoc.attributes?.private).toBe(false)
       expect(captureCreateDoc.attributes?.archived).toBe(false)
       expect(captureCreateDoc.attributes?.members).toEqual(["test-account-uuid"])
+      expect(captureCreateDoc.attributes?.owners).toEqual(["test-account-uuid"])
     }))
 
   // test-revizorro: approved
