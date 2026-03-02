@@ -214,17 +214,18 @@ export const findTestRun = (
 
 export const findTestResult = (
   client: HulyClientOperations,
+  project: TestProject,
   idOrName: string
 ): Effect.Effect<TestResult, TestResultNotFoundError | HulyClientError> =>
   Effect.gen(function*() {
     let result = yield* client.findOne<TestResult>(
       testManagement.class.TestResult,
-      { _id: toRef<TestResult>(idOrName) }
+      { _id: toRef<TestResult>(idOrName), space: project._id }
     )
     if (result === undefined) {
       result = yield* client.findOne<TestResult>(
         testManagement.class.TestResult,
-        { name: idOrName }
+        { name: idOrName, space: project._id }
       )
     }
     if (result === undefined) {

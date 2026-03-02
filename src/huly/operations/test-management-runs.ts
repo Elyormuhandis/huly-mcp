@@ -69,12 +69,13 @@ const toRunSummary = (r: TestRun): TestRunSummary => ({
   ...(r.dueDate !== undefined ? { dueDate: r.dueDate } : {})
 })
 
-const toResultSummary = (r: TestResult): TestResultSummary => {
-  const summary: TestResultSummary = { id: TestResultId.make(r._id), name: r.name, testCase: r.testCase }
-  if (r.status !== undefined) (summary as { status: string }).status = testRunStatusToString(r.status)
-  if (r.assignee !== undefined) (summary as { assignee: string }).assignee = r.assignee
-  return summary
-}
+const toResultSummary = (r: TestResult): TestResultSummary => ({
+  id: TestResultId.make(r._id),
+  name: r.name,
+  testCase: r.testCase,
+  ...(r.status !== undefined ? { status: testRunStatusToString(r.status) } : {}),
+  ...(r.assignee !== undefined ? { assignee: r.assignee } : {})
+})
 
 export const listTestRuns = (
   params: ListTestRunsParams
@@ -199,8 +200,8 @@ export const getTestResult = (
 ): Effect.Effect<GetTestResultDetail, TestResultMutateError, HulyClient> =>
   Effect.gen(function*() {
     const client = yield* HulyClient
-    yield* findTestProject(client, params.project)
-    const result = yield* findTestResult(client, params.result)
+    const project = yield* findTestProject(client, params.project)
+    const result = yield* findTestResult(client, project, params.result)
     let descriptionStr: string | undefined
     if (result.description !== null) {
       descriptionStr = yield* client.fetchMarkup(
@@ -211,16 +212,15 @@ export const getTestResult = (
         "markdown"
       )
     }
-    const detail: GetTestResultDetail = {
+    return {
       id: TestResultId.make(result._id),
       name: result.name,
-      testCase: result.testCase
+      testCase: result.testCase,
+      ...(result.testSuite !== undefined ? { testSuite: result.testSuite } : {}),
+      ...(result.status !== undefined ? { status: testRunStatusToString(result.status) } : {}),
+      ...(result.assignee !== undefined ? { assignee: result.assignee } : {}),
+      ...(descriptionStr !== undefined ? { description: descriptionStr } : {})
     }
-    if (result.testSuite !== undefined) (detail as { testSuite: string }).testSuite = result.testSuite
-    if (result.status !== undefined) (detail as { status: string }).status = testRunStatusToString(result.status)
-    if (result.assignee !== undefined) (detail as { assignee: string }).assignee = result.assignee
-    if (descriptionStr !== undefined) (detail as { description: string }).description = descriptionStr
-    return detail
   })
 
 export const createTestResult = (
@@ -260,12 +260,13 @@ export const updateTestResult = (
 ): Effect.Effect<UpdateTestResultResult, TestResultMutateError | PersonNotFoundError, HulyClient> =>
   Effect.gen(function*() {
     const client = yield* HulyClient
-    yield* findTestProject(client, params.project)
-    const result = yield* findTestResult(client, params.result)
+    const project = yield* findTestProject(client, params.project)
+    const result = yield* findTestResult(client, project, params.result)
     const ops: DocumentUpdate<TestResult> = {}
     if (params.status !== undefined) ops.status = stringToTestRunStatus(params.status) ?? TestRunStatus.Untested
     if (params.assignee !== undefined) {
-      ops.assignee = toRef<Employee>((yield* resolveAssignee(params.assignee))._id)
+      if (params.assignee === null) ops.$unset = { ...ops.$unset, assignee: "" }
+      else ops.assignee = toRef<Employee>((yield* resolveAssignee(params.assignee))._id)
     }
     if (params.description !== undefined) {
       if (params.description === null) ops.description = null
@@ -289,8 +290,8 @@ export const deleteTestResult = (
 ): Effect.Effect<DeleteTestResultResult, TestResultMutateError, HulyClient> =>
   Effect.gen(function*() {
     const client = yield* HulyClient
-    yield* findTestProject(client, params.project)
-    const result = yield* findTestResult(client, params.result)
+    const project = yield* findTestProject(client, params.project)
+    const result = yield* findTestResult(client, project, params.result)
     yield* client.removeDoc(testManagement.class.TestResult, result.space, result._id)
     return { id: TestResultId.make(result._id), deleted: true }
   })

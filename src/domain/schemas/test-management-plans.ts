@@ -241,7 +241,9 @@ export const UpdateTestResultParamsSchema = Schema.Struct({
   project: projectField,
   result: resultField,
   status: Schema.optional(statusField),
-  assignee: Schema.optional(assigneeField),
+  assignee: Schema.optional(
+    Schema.NullOr(NonEmptyString).annotations({ description: "Assignee email or name, or null to unassign" })
+  ),
   description: Schema.optional(descNullField)
 }).annotations({ title: "UpdateTestResultParams", description: "Update a test result" })
 export type UpdateTestResultParams = Schema.Schema.Type<typeof UpdateTestResultParamsSchema>

@@ -10,6 +10,7 @@ import {
   createTestRun,
   deleteTestResult,
   deleteTestRun,
+  getTestResult,
   getTestRun,
   listTestResults,
   listTestRuns,
@@ -316,6 +317,40 @@ describe("listTestResults", () => {
         run: testRunIdentifier("Nightly Run")
       }).pipe(Effect.provide(buildLayer({ runs: [makeRun()], results })))
       expect(result.results).toHaveLength(2)
+    }))
+})
+
+describe("getTestResult", () => {
+  it.effect("returns result with optional fields", () =>
+    Effect.gen(function*() {
+      const r = makeResult("r-1", "tc-1", {
+        status: TestRunStatus.Passed,
+        assignee: "emp-1" as unknown as Ref<import("@hcengineering/contact").Employee>,
+        description: "markup-ref" as unknown as import("@hcengineering/core").MarkupBlobRef
+      })
+      const detail = yield* getTestResult({
+        project: testProjectIdentifier("QA Project"),
+        result: testResultIdentifier("r-1")
+      }).pipe(Effect.provide(buildLayer({ results: [r] })))
+      expect(detail.name).toBe("Result-r-1")
+      expect(detail.status).toBe("passed")
+      expect(detail.assignee).toBe("emp-1")
+      expect(detail.description).toBe("fetched content")
+    }))
+
+  it.effect("omits absent optional fields", () =>
+    Effect.gen(function*() {
+      const base = makeResult("r-1", "tc-1")
+      delete (base as unknown as Record<string, unknown>).status
+      delete (base as unknown as Record<string, unknown>).assignee
+      const detail = yield* getTestResult({
+        project: testProjectIdentifier("QA Project"),
+        result: testResultIdentifier("r-1")
+      }).pipe(Effect.provide(buildLayer({ results: [base] })))
+      expect(detail.name).toBe("Result-r-1")
+      expect(detail).not.toHaveProperty("status")
+      expect(detail).not.toHaveProperty("assignee")
+      expect(detail).not.toHaveProperty("description")
     }))
 })
 

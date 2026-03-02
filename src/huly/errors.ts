@@ -393,9 +393,6 @@ export class TagCategoryNotFoundError extends Schema.TaggedError<TagCategoryNotF
   }
 }
 
-/**
- * Component not found in the specified project.
- */
 export class TestProjectNotFoundError extends Schema.TaggedError<TestProjectNotFoundError>()(
   "TestProjectNotFoundError",
   {
