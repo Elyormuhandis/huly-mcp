@@ -209,17 +209,7 @@ export const createTestSuite = (
     const client = yield* HulyClient
     const project = yield* findTestProject(client, params.project)
 
-    const existing = yield* client.findOne<TestSuite>(
-      testManagement.class.TestSuite,
-      { name: params.name, space: project._id }
-    )
-
-    if (existing !== undefined) {
-      return { id: TestSuiteId.make(existing._id), name: existing.name, created: false }
-    }
-
-    const suiteId: Ref<TestSuite> = generateId()
-
+    // Resolve parent first — needed for both idempotency check and creation.
     // Default parent is the project class ref (Huly convention for root suites).
     // toRef bridges Ref<Class<TestProject>> -> Ref<TestSuite> at the SDK boundary.
     let parentRef: Ref<TestSuite> = toRef<TestSuite>(testManagement.class.TestProject)
@@ -228,8 +218,16 @@ export const createTestSuite = (
       parentRef = parentSuite._id
     }
 
-    // TestSuite fields (name, description, parent) don't have a Data<TestSuite> constructor.
-    // We build the plain object and use toRef to bridge the branded types.
+    const existing = yield* client.findOne<TestSuite>(
+      testManagement.class.TestSuite,
+      { name: params.name, space: project._id, parent: parentRef }
+    )
+
+    if (existing !== undefined) {
+      return { id: TestSuiteId.make(existing._id), name: existing.name, created: false }
+    }
+
+    const suiteId: Ref<TestSuite> = generateId()
     const suiteData: Record<string, unknown> = {
       name: params.name,
       description: params.description ?? "",
@@ -316,9 +314,7 @@ export const listTestCases = (
     }
 
     if (params.assignee !== undefined) {
-      const person = yield* resolveAssignee(params.assignee).pipe(
-        Effect.provideService(HulyClient, client)
-      )
+      const person = yield* resolveAssignee(params.assignee)
       query.assignee = toRef<Employee>(person._id)
     }
 
@@ -375,9 +371,7 @@ export const createTestCase = (
 
     let assigneeRef: Ref<Employee> | null = null
     if (params.assignee !== undefined) {
-      const person = yield* resolveAssignee(params.assignee).pipe(
-        Effect.provideService(HulyClient, client)
-      )
+      const person = yield* resolveAssignee(params.assignee)
       assigneeRef = toRef<Employee>(person._id)
     }
 

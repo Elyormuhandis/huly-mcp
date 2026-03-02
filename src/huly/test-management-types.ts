@@ -60,7 +60,7 @@ export interface TestCase extends AttachedDoc {
   type: TestCaseType
   priority: TestCasePriority
   status: TestCaseStatus
-  assignee: Ref<Employee>
+  assignee: Ref<Employee> | null
 }
 
 export interface TestRun extends Doc {

@@ -79,8 +79,7 @@ const makeTestCase = (overrides?: Partial<TestCase>): TestCase => {
     type: TestCaseType.Functional,
     priority: TestCasePriority.Medium,
     status: TestCaseStatus.Draft,
-    // eslint-disable-next-line no-restricted-syntax -- null -> Ref<Employee> for unassigned test case
-    assignee: null as unknown as Ref<import("@hcengineering/contact").Employee>,
+    assignee: null,
     modifiedBy: "user-1" as PersonId,
     modifiedOn: Date.now(),
     createdBy: "user-1" as PersonId,
