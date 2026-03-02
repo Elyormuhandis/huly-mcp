@@ -363,7 +363,7 @@ const createTestLayerWithMocks = (config: MockConfig) => {
 
 describe("Issues Coverage - resolveStatusName", () => {
   // test-revizorro: approved
-  it.effect("fails with HulyError when status ID not found in project status list", () =>
+  it.effect("returns Unknown for unresolvable status ID", () =>
     Effect.gen(function*() {
       const project = makeProject({ identifier: "TEST" })
       const openStatus = makeStatus({ _id: "status-open" as Ref<Status>, name: "Open" })
@@ -378,13 +378,10 @@ describe("Issues Coverage - resolveStatusName", () => {
         statuses: [openStatus]
       })
 
-      const error = yield* Effect.flip(
-        listIssues({ project: projectIdentifier("TEST") }).pipe(Effect.provide(testLayer))
-      )
+      const results = yield* listIssues({ project: projectIdentifier("TEST") }).pipe(Effect.provide(testLayer))
 
-      expect(error._tag).toBe("HulyError")
-      expect(error.message).toContain("status-unknown")
-      expect(error.message).toContain("not found in project status list")
+      expect(results).toHaveLength(1)
+      expect(results[0]?.status).toBe("Unknown")
     }))
 })
 

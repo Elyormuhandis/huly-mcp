@@ -55,7 +55,7 @@ import {
 import { normalizeForComparison } from "../../utils/normalize.js"
 import type { HulyClient, HulyClientError } from "../client.js"
 import type { ComponentNotFoundError, ProjectNotFoundError } from "../errors.js"
-import { HulyError, InvalidStatusError, IssueNotFoundError, PersonNotFoundError } from "../errors.js"
+import { InvalidStatusError, IssueNotFoundError, PersonNotFoundError } from "../errors.js"
 import { contact, core, tags, tracker } from "../huly-plugins.js"
 import { findComponentByIdOrLabel } from "./components.js"
 import { escapeLikeWildcards, withLookup } from "./query-helpers.js"
@@ -76,14 +76,12 @@ import {
 
 type ListIssuesError =
   | HulyClientError
-  | HulyError
   | ProjectNotFoundError
   | InvalidStatusError
   | ComponentNotFoundError
 
 type GetIssueError =
   | HulyClientError
-  | HulyError
   | ProjectNotFoundError
   | IssueNotFoundError
 
@@ -156,16 +154,9 @@ const resolveAssignee = (
 const resolveStatusName = (
   statuses: Array<StatusInfo>,
   statusId: Ref<Status>
-): Effect.Effect<string, HulyError> => {
+): string => {
   const statusDoc = statuses.find(s => s._id === statusId)
-  if (statusDoc === undefined) {
-    return Effect.fail(
-      new HulyError({
-        message: `Status '${statusId}' not found in project status list — possible data inconsistency`
-      })
-    )
-  }
-  return Effect.succeed(statusDoc.name)
+  return statusDoc?.name ?? "Unknown"
 }
 
 // --- Operations ---
@@ -269,7 +260,7 @@ export const listIssues = (
 
     const summaries: Array<IssueSummary> = []
     for (const issue of issues) {
-      const statusName = yield* resolveStatusName(statuses, issue.status)
+      const statusName = resolveStatusName(statuses, issue.status)
       const assigneeName = issue.$lookup?.assignee?.name
 
       summaries.push({
@@ -317,7 +308,7 @@ export const getIssue = (
       return yield* new IssueNotFoundError({ identifier: params.identifier, project: params.project })
     }
 
-    const statusName = yield* resolveStatusName(statuses, issue.status)
+    const statusName = resolveStatusName(statuses, issue.status)
 
     let assigneeName: string | undefined
     let assigneeRef: Issue["assigneeRef"]
