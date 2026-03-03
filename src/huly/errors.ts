@@ -499,6 +499,22 @@ export class IssueTemplateNotFoundError extends Schema.TaggedError<IssueTemplate
 }
 
 /**
+ * Child template not found within an issue template.
+ */
+export class TemplateChildNotFoundError extends Schema.TaggedError<TemplateChildNotFoundError>()(
+  "TemplateChildNotFoundError",
+  {
+    childId: Schema.String,
+    template: Schema.String,
+    project: Schema.String
+  }
+) {
+  override get message(): string {
+    return `Child template '${this.childId}' not found in template '${this.template}' of project '${this.project}'`
+  }
+}
+
+/**
  * Notification not found.
  */
 export class NotificationNotFoundError extends Schema.TaggedError<NotificationNotFoundError>()(
@@ -616,6 +632,7 @@ export type HulyDomainError =
   | TestPlanItemNotFoundError
   | ComponentNotFoundError
   | IssueTemplateNotFoundError
+  | TemplateChildNotFoundError
   | NotificationNotFoundError
   | NotificationContextNotFoundError
   | InvalidPersonUuidError
@@ -665,6 +682,7 @@ export const HulyDomainError: Schema.Union<
     typeof TestPlanItemNotFoundError,
     typeof ComponentNotFoundError,
     typeof IssueTemplateNotFoundError,
+    typeof TemplateChildNotFoundError,
     typeof NotificationNotFoundError,
     typeof NotificationContextNotFoundError,
     typeof InvalidPersonUuidError,
@@ -710,6 +728,7 @@ export const HulyDomainError: Schema.Union<
   TestPlanItemNotFoundError,
   ComponentNotFoundError,
   IssueTemplateNotFoundError,
+  TemplateChildNotFoundError,
   NotificationNotFoundError,
   NotificationContextNotFoundError,
   InvalidPersonUuidError,

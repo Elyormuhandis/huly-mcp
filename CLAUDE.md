@@ -52,6 +52,10 @@ Key examples to reference:
 
 Search examples for real usage patterns when implementing MCP tools.
 
+## Huly API Gotchas
+
+**Eventual consistency**: Huly's client does not see its own writes immediately within the same session. `findOne`, `addCollection` (resolves `attachedTo` ref internally), and other read-after-write patterns will hang or return stale data if the target document was just created.
+
 ## Manual Testing (stdio)
 
 ```bash

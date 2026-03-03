@@ -44,6 +44,9 @@ export type MilestoneId = Schema.Schema.Type<typeof MilestoneId>
 export const IssueTemplateId = HulyRef("IssueTemplateId")
 export type IssueTemplateId = Schema.Schema.Type<typeof IssueTemplateId>
 
+export const IssueTemplateChildId = HulyRef("IssueTemplateChildId")
+export type IssueTemplateChildId = Schema.Schema.Type<typeof IssueTemplateChildId>
+
 export const ChannelId = HulyRef("ChannelId")
 export type ChannelId = Schema.Schema.Type<typeof ChannelId>
 

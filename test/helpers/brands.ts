@@ -31,6 +31,7 @@ import type {
   EventId,
   IssueId,
   IssueIdentifier,
+  IssueTemplateChildId,
   IssueTemplateId,
   MemberReference,
   MessageId,
@@ -86,6 +87,7 @@ export const organizationId = (s: string) => s as OrganizationId
 export const issueId = (s: string) => s as IssueId
 export const componentBrandId = (s: string) => s as ComponentId
 export const milestoneId = (s: string) => s as MilestoneId
+export const issueTemplateChildId = (s: string) => s as IssueTemplateChildId
 export const issueTemplateId = (s: string) => s as IssueTemplateId
 export const channelBrandId = (s: string) => s as ChannelId
 export const messageBrandId = (s: string) => s as MessageId
@@ -187,6 +189,7 @@ export type {
   EventId,
   IssueId,
   IssueIdentifier,
+  IssueTemplateChildId,
   IssueTemplateId,
   MemberReference,
   MessageId,

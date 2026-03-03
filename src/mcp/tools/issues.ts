@@ -1,6 +1,7 @@
 import {
   addIssueRelationParamsJsonSchema,
   addLabelParamsJsonSchema,
+  addTemplateChildParamsJsonSchema,
   createComponentParamsJsonSchema,
   createIssueFromTemplateParamsJsonSchema,
   createIssueParamsJsonSchema,
@@ -18,6 +19,7 @@ import {
   moveIssueParamsJsonSchema,
   parseAddIssueRelationParams,
   parseAddLabelParams,
+  parseAddTemplateChildParams,
   parseCreateComponentParams,
   parseCreateIssueFromTemplateParams,
   parseCreateIssueParams,
@@ -35,12 +37,14 @@ import {
   parseMoveIssueParams,
   parseRemoveIssueRelationParams,
   parseRemoveLabelParams,
+  parseRemoveTemplateChildParams,
   parseSetIssueComponentParams,
   parseUpdateComponentParams,
   parseUpdateIssueParams,
   parseUpdateIssueTemplateParams,
   removeIssueRelationParamsJsonSchema,
   removeLabelParamsJsonSchema,
+  removeTemplateChildParamsJsonSchema,
   setIssueComponentParamsJsonSchema,
   updateComponentParamsJsonSchema,
   updateIssueParamsJsonSchema,
@@ -55,11 +59,13 @@ import {
   updateComponent
 } from "../../huly/operations/components.js"
 import {
+  addTemplateChild,
   createIssueFromTemplate,
   createIssueTemplate,
   deleteIssueTemplate,
   getIssueTemplate,
   listIssueTemplates,
+  removeTemplateChild,
   updateIssueTemplate
 } from "../../huly/operations/issue-templates.js"
 import {
@@ -255,7 +261,7 @@ export const issueTools: ReadonlyArray<RegisteredTool> = [
   {
     name: "get_issue_template",
     description:
-      "Retrieve full details for a Huly issue template. Use this to view template content and default values.",
+      "Retrieve full details for a Huly issue template including children (sub-task templates). Use this to view template content, default values, and child template IDs.",
     category: CATEGORY,
     inputSchema: getIssueTemplateParamsJsonSchema,
     handler: createToolHandler(
@@ -267,7 +273,7 @@ export const issueTools: ReadonlyArray<RegisteredTool> = [
   {
     name: "create_issue_template",
     description:
-      "Create a new issue template in a Huly project. Templates define default values for new issues. Returns the created template ID and title.",
+      "Create a new issue template in a Huly project. Templates define default values for new issues. Optionally include children (sub-task templates) that will become sub-issues when creating issues from this template. Returns the created template ID and title.",
     category: CATEGORY,
     inputSchema: createIssueTemplateParamsJsonSchema,
     handler: createToolHandler(
@@ -279,7 +285,7 @@ export const issueTools: ReadonlyArray<RegisteredTool> = [
   {
     name: "create_issue_from_template",
     description:
-      "Create a new issue from a template. Applies template defaults, allowing overrides for specific fields. Returns the created issue identifier.",
+      "Create a new issue from a template. Applies template defaults, allowing overrides for specific fields. If the template has children (sub-task templates), sub-issues are created automatically unless includeChildren is set to false. Returns the created issue identifier and count of children created.",
     category: CATEGORY,
     inputSchema: createIssueFromTemplateParamsJsonSchema,
     handler: createToolHandler(
@@ -308,6 +314,30 @@ export const issueTools: ReadonlyArray<RegisteredTool> = [
       "delete_issue_template",
       parseDeleteIssueTemplateParams,
       deleteIssueTemplate
+    )
+  },
+  {
+    name: "add_template_child",
+    description:
+      "Add a child (sub-task) template to an issue template. The child defines default values for sub-issues created when using create_issue_from_template. Returns the child template ID.",
+    category: CATEGORY,
+    inputSchema: addTemplateChildParamsJsonSchema,
+    handler: createToolHandler(
+      "add_template_child",
+      parseAddTemplateChildParams,
+      addTemplateChild
+    )
+  },
+  {
+    name: "remove_template_child",
+    description:
+      "Remove a child (sub-task) template from an issue template by its child ID. Get child IDs from get_issue_template response.",
+    category: CATEGORY,
+    inputSchema: removeTemplateChildParamsJsonSchema,
+    handler: createToolHandler(
+      "remove_template_child",
+      parseRemoveTemplateChildParams,
+      removeTemplateChild
     )
   },
   {

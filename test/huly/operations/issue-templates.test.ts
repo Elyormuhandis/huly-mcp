@@ -3,8 +3,10 @@ import type { Channel, Person } from "@hcengineering/contact"
 import type { Attribute, Class, Doc, FindResult, PersonId, Ref, Space, Status } from "@hcengineering/core"
 import {
   type Component as HulyComponent,
+  type Issue as HulyIssue,
   IssuePriority,
   type IssueTemplate as HulyIssueTemplate,
+  type IssueTemplateChild as HulyIssueTemplateChild,
   type Project as HulyProject,
   TimeReportDayType
 } from "@hcengineering/tracker"
@@ -15,20 +17,24 @@ import type {
   ComponentNotFoundError,
   IssueTemplateNotFoundError,
   PersonNotFoundError,
-  ProjectNotFoundError
+  ProjectNotFoundError,
+  TemplateChildNotFoundError
 } from "../../../src/huly/errors.js"
 import { contact, core, tracker } from "../../../src/huly/huly-plugins.js"
 import {
+  addTemplateChild,
   createIssueFromTemplate,
   createIssueTemplate,
   deleteIssueTemplate,
   getIssueTemplate,
   listIssueTemplates,
+  removeTemplateChild,
   updateIssueTemplate
 } from "../../../src/huly/operations/issue-templates.js"
 import {
   componentIdentifier,
   email,
+  issueTemplateChildId,
   positiveNumber,
   projectIdentifier,
   templateIdentifier
@@ -139,6 +145,17 @@ const makeStatus = (overrides?: Partial<Status>): Status => ({
 
 // --- Test Helpers ---
 
+const makeTemplateChild = (overrides?: Partial<HulyIssueTemplateChild>): HulyIssueTemplateChild => ({
+  id: "child-1" as Ref<HulyIssue>,
+  title: "Child Task",
+  description: "",
+  priority: IssuePriority.Medium,
+  assignee: null,
+  component: null,
+  estimation: 0,
+  ...overrides
+})
+
 interface MockConfig {
   projects?: Array<HulyProject>
   templates?: Array<HulyIssueTemplate>
@@ -148,8 +165,17 @@ interface MockConfig {
   statuses?: Array<Status>
   captureCreateDoc?: { attributes?: Record<string, unknown>; id?: string }
   captureUpdateDoc?: { operations?: Record<string, unknown> }
+  /** Tracks all updateDoc calls in order */
+  captureUpdateDocAll?: Array<{ objectId: string; operations: Record<string, unknown> }>
   captureRemoveDoc?: { called: boolean; id?: string }
   captureAddCollection?: { attributes?: Record<string, unknown>; id?: string }
+  /** Tracks all addCollection calls in order */
+  captureAddCollectionAll?: Array<{
+    attributes: Record<string, unknown>
+    id: string
+    attachedTo: string
+    collection: string
+  }>
   captureUploadMarkup?: { markup?: string }
   updateDocResult?: { object?: { sequence?: number } }
 }
@@ -293,14 +319,26 @@ const createTestLayerWithMocks = (config: MockConfig) => {
     return Effect.succeed((id ?? "new-doc-id") as Ref<Doc>)
   }) as HulyClientOperations["createDoc"]
 
+  let sequenceCounter = projects[0]?.sequence ?? 1
+
   const updateDocImpl: HulyClientOperations["updateDoc"] = (
     (_class: unknown, _space: unknown, _objectId: unknown, operations: unknown) => {
       if (config.captureUpdateDoc) {
         config.captureUpdateDoc.operations = operations as Record<string, unknown>
       }
-      const project = projects[0]
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- project may be undefined from array access
-      const sequence = config.updateDocResult?.object?.sequence ?? (project ? project.sequence + 1 : 2)
+      if (config.captureUpdateDocAll) {
+        config.captureUpdateDocAll.push({
+          objectId: _objectId as string,
+          operations: operations as Record<string, unknown>
+        })
+      }
+      // Track sequence increments for createChildIssue
+      const ops = operations as Record<string, unknown>
+      if (ops.$inc && typeof ops.$inc === "object" && "sequence" in (ops.$inc as Record<string, unknown>)) {
+        sequenceCounter++
+        return Effect.succeed({ object: { sequence: sequenceCounter } } as never)
+      }
+      const sequence = config.updateDocResult?.object?.sequence ?? sequenceCounter + 1
       return Effect.succeed({ object: { sequence } } as never)
     }
   ) as HulyClientOperations["updateDoc"]
@@ -327,6 +365,14 @@ const createTestLayerWithMocks = (config: MockConfig) => {
     if (config.captureAddCollection) {
       config.captureAddCollection.attributes = attributes as Record<string, unknown>
       config.captureAddCollection.id = id as string
+    }
+    if (config.captureAddCollectionAll) {
+      config.captureAddCollectionAll.push({
+        attributes: attributes as Record<string, unknown>,
+        id: (id ?? "new-issue-id") as string,
+        attachedTo: _attachedTo as string,
+        collection: _collection as string
+      })
     }
     return Effect.succeed((id ?? "new-issue-id") as Ref<Doc>)
   }) as HulyClientOperations["addCollection"]
@@ -1313,5 +1359,437 @@ describe("deleteIssueTemplate", () => {
       }).pipe(Effect.flip, Effect.provide(testLayer))
 
       expect((result as ProjectNotFoundError)._tag).toBe("ProjectNotFoundError")
+    }))
+})
+
+// --- Children support tests ---
+
+describe("listIssueTemplates with children", () => {
+  it.effect("includes childrenCount when template has children", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const templates = [
+        makeIssueTemplate({
+          _id: "t-1" as Ref<HulyIssueTemplate>,
+          title: "With Children",
+          children: [
+            makeTemplateChild({ id: "c-1" as Ref<HulyIssue> }),
+            makeTemplateChild({ id: "c-2" as Ref<HulyIssue> })
+          ]
+        }),
+        makeIssueTemplate({
+          _id: "t-2" as Ref<HulyIssueTemplate>,
+          title: "No Children",
+          children: []
+        })
+      ]
+
+      const testLayer = createTestLayerWithMocks({ projects: [project], templates })
+
+      const result = yield* listIssueTemplates({ project: projectIdentifier("TEST") }).pipe(Effect.provide(testLayer))
+
+      expect(result).toHaveLength(2)
+      expect(result[0].childrenCount).toBe(2)
+      expect(result[1].childrenCount).toBeUndefined()
+    }))
+})
+
+describe("getIssueTemplate with children", () => {
+  it.effect("resolves children with assignee and component", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const person = makePerson({ _id: "person-1" as Ref<Person>, name: "Jane Doe" })
+      const component = makeComponent({ _id: "comp-1" as Ref<HulyComponent>, label: "Backend" })
+      const template = makeIssueTemplate({
+        children: [
+          makeTemplateChild({
+            id: "child-1" as Ref<HulyIssue>,
+            title: "Sub-task 1",
+            description: "Do the thing",
+            priority: IssuePriority.High,
+            assignee: "person-1" as Ref<Person>,
+            component: "comp-1" as Ref<HulyComponent>,
+            estimation: 30
+          }),
+          makeTemplateChild({
+            id: "child-2" as Ref<HulyIssue>,
+            title: "Sub-task 2",
+            assignee: null,
+            component: null
+          })
+        ]
+      })
+
+      const testLayer = createTestLayerWithMocks({
+        projects: [project],
+        templates: [template],
+        persons: [person],
+        components: [component]
+      })
+
+      const result = yield* getIssueTemplate({
+        project: projectIdentifier("TEST"),
+        template: templateIdentifier("Bug Report Template")
+      }).pipe(Effect.provide(testLayer))
+
+      expect(result.children).toHaveLength(2)
+      const child1 = result.children![0]
+      expect(child1.id).toBe("child-1")
+      expect(child1.title).toBe("Sub-task 1")
+      expect(child1.description).toBe("Do the thing")
+      expect(child1.priority).toBe("high")
+      expect(child1.assignee).toBe("Jane Doe")
+      expect(child1.component).toBe("Backend")
+      expect(child1.estimation).toBe(30)
+
+      const child2 = result.children![1]
+      expect(child2.id).toBe("child-2")
+      expect(child2.title).toBe("Sub-task 2")
+      expect(child2.assignee).toBeUndefined()
+      expect(child2.component).toBeUndefined()
+    }))
+
+  it.effect("omits children field when template has no children", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const template = makeIssueTemplate({ children: [] })
+
+      const testLayer = createTestLayerWithMocks({ projects: [project], templates: [template] })
+
+      const result = yield* getIssueTemplate({
+        project: projectIdentifier("TEST"),
+        template: templateIdentifier("Bug Report Template")
+      }).pipe(Effect.provide(testLayer))
+
+      expect(result.children).toBeUndefined()
+    }))
+})
+
+describe("createIssueTemplate with children", () => {
+  it.effect("creates template with children array", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const capture: MockConfig["captureCreateDoc"] = {}
+
+      const testLayer = createTestLayerWithMocks({
+        projects: [project],
+        captureCreateDoc: capture
+      })
+
+      const result = yield* createIssueTemplate({
+        project: projectIdentifier("TEST"),
+        title: "Template With Kids",
+        children: [
+          { title: "Child A", priority: "high" },
+          { title: "Child B", description: "desc B" }
+        ]
+      }).pipe(Effect.provide(testLayer))
+
+      expect(result.title).toBe("Template With Kids")
+      const attrs = capture.attributes as Record<string, unknown>
+      const children = attrs.children as Array<Record<string, unknown>>
+      expect(children).toHaveLength(2)
+      expect(children[0].title).toBe("Child A")
+      expect(children[0].priority).toBe(IssuePriority.High)
+      expect(children[1].title).toBe("Child B")
+      expect(children[1].description).toBe("desc B")
+    }))
+
+  it.effect("creates template with empty children when none provided", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const capture: MockConfig["captureCreateDoc"] = {}
+
+      const testLayer = createTestLayerWithMocks({
+        projects: [project],
+        captureCreateDoc: capture
+      })
+
+      yield* createIssueTemplate({
+        project: projectIdentifier("TEST"),
+        title: "No Kids Template"
+      }).pipe(Effect.provide(testLayer))
+
+      const attrs = capture.attributes as Record<string, unknown>
+      expect(attrs.children).toEqual([])
+    }))
+})
+
+describe("addTemplateChild", () => {
+  it.effect("adds a child to an existing template", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const template = makeIssueTemplate({ children: [] })
+      const captureUpdate: MockConfig["captureUpdateDoc"] = {}
+
+      const testLayer = createTestLayerWithMocks({
+        projects: [project],
+        templates: [template],
+        captureUpdateDoc: captureUpdate
+      })
+
+      const result = yield* addTemplateChild({
+        project: projectIdentifier("TEST"),
+        template: templateIdentifier("Bug Report Template"),
+        title: "New Child"
+      }).pipe(Effect.provide(testLayer))
+
+      expect(result.added).toBe(true)
+      expect(result.title).toBe("New Child")
+      expect(result.id).toBeDefined()
+
+      const ops = captureUpdate.operations as Record<string, unknown>
+      const children = ops.children as Array<Record<string, unknown>>
+      expect(children).toHaveLength(1)
+      expect(children[0].title).toBe("New Child")
+    }))
+
+  it.effect("appends child to existing children", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const existingChild = makeTemplateChild({ id: "existing-1" as Ref<HulyIssue>, title: "Existing" })
+      const template = makeIssueTemplate({ children: [existingChild] })
+      const captureUpdate: MockConfig["captureUpdateDoc"] = {}
+
+      const testLayer = createTestLayerWithMocks({
+        projects: [project],
+        templates: [template],
+        captureUpdateDoc: captureUpdate
+      })
+
+      yield* addTemplateChild({
+        project: projectIdentifier("TEST"),
+        template: templateIdentifier("Bug Report Template"),
+        title: "New Child",
+        priority: "urgent"
+      }).pipe(Effect.provide(testLayer))
+
+      const ops = captureUpdate.operations as Record<string, unknown>
+      const children = ops.children as Array<Record<string, unknown>>
+      expect(children).toHaveLength(2)
+      expect(children[0].title).toBe("Existing")
+      expect(children[1].title).toBe("New Child")
+      expect(children[1].priority).toBe(IssuePriority.Urgent)
+    }))
+
+  it.effect("resolves assignee and component for child", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const template = makeIssueTemplate({ children: [] })
+      const person = makePerson({ _id: "person-1" as Ref<Person>, name: "John Doe" })
+      const channel = makeChannel({ attachedTo: "person-1" as Ref<Doc>, value: "john@example.com" })
+      const component = makeComponent({ label: "Frontend" })
+      const captureUpdate: MockConfig["captureUpdateDoc"] = {}
+
+      const testLayer = createTestLayerWithMocks({
+        projects: [project],
+        templates: [template],
+        persons: [person],
+        channels: [channel],
+        components: [component],
+        captureUpdateDoc: captureUpdate
+      })
+
+      yield* addTemplateChild({
+        project: projectIdentifier("TEST"),
+        template: templateIdentifier("Bug Report Template"),
+        title: "With Refs",
+        assignee: email("john@example.com"),
+        component: componentIdentifier("Frontend")
+      }).pipe(Effect.provide(testLayer))
+
+      const ops = captureUpdate.operations as Record<string, unknown>
+      const children = ops.children as Array<Record<string, unknown>>
+      expect(children[0].assignee).toBe("person-1")
+      expect(children[0].component).toBe("component-1")
+    }))
+
+  it.effect("fails with PersonNotFoundError for unknown assignee", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const template = makeIssueTemplate({ children: [] })
+
+      const testLayer = createTestLayerWithMocks({
+        projects: [project],
+        templates: [template]
+      })
+
+      const result = yield* addTemplateChild({
+        project: projectIdentifier("TEST"),
+        template: templateIdentifier("Bug Report Template"),
+        title: "Bad Child",
+        assignee: email("nobody@example.com")
+      }).pipe(Effect.flip, Effect.provide(testLayer))
+
+      expect((result as PersonNotFoundError)._tag).toBe("PersonNotFoundError")
+    }))
+})
+
+describe("removeTemplateChild", () => {
+  it.effect("removes an existing child by ID", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const child1 = makeTemplateChild({ id: "child-1" as Ref<HulyIssue>, title: "First" })
+      const child2 = makeTemplateChild({ id: "child-2" as Ref<HulyIssue>, title: "Second" })
+      const template = makeIssueTemplate({ children: [child1, child2] })
+      const captureUpdate: MockConfig["captureUpdateDoc"] = {}
+
+      const testLayer = createTestLayerWithMocks({
+        projects: [project],
+        templates: [template],
+        captureUpdateDoc: captureUpdate
+      })
+
+      const result = yield* removeTemplateChild({
+        project: projectIdentifier("TEST"),
+        template: templateIdentifier("Bug Report Template"),
+        childId: issueTemplateChildId("child-1")
+      }).pipe(Effect.provide(testLayer))
+
+      expect(result.removed).toBe(true)
+      expect(result.id).toBe("child-1")
+      expect(result.title).toBe("First")
+
+      const ops = captureUpdate.operations as Record<string, unknown>
+      const children = ops.children as Array<Record<string, unknown>>
+      expect(children).toHaveLength(1)
+      expect(children[0].title).toBe("Second")
+    }))
+
+  it.effect("fails with TemplateChildNotFoundError for unknown child ID", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const template = makeIssueTemplate({ children: [] })
+
+      const testLayer = createTestLayerWithMocks({
+        projects: [project],
+        templates: [template]
+      })
+
+      const result = yield* removeTemplateChild({
+        project: projectIdentifier("TEST"),
+        template: templateIdentifier("Bug Report Template"),
+        childId: issueTemplateChildId("nonexistent")
+      }).pipe(Effect.flip, Effect.provide(testLayer))
+
+      expect((result as TemplateChildNotFoundError)._tag).toBe("TemplateChildNotFoundError")
+    }))
+})
+
+describe("createIssueFromTemplate with children", () => {
+  it.effect("creates sub-issues for each template child", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const status = makeStatus({ _id: "status-open" as Ref<Status>, name: "Open" })
+      const child1 = makeTemplateChild({
+        id: "child-1" as Ref<HulyIssue>,
+        title: "Sub-task A",
+        priority: IssuePriority.High
+      })
+      const child2 = makeTemplateChild({
+        id: "child-2" as Ref<HulyIssue>,
+        title: "Sub-task B",
+        priority: IssuePriority.Low
+      })
+      const template = makeIssueTemplate({
+        title: "Parent Template",
+        children: [child1, child2]
+      })
+
+      const captureAll: MockConfig["captureAddCollectionAll"] = []
+      const captureUpdateAll: MockConfig["captureUpdateDocAll"] = []
+      const testLayer = createTestLayerWithMocks({
+        projects: [project],
+        templates: [template],
+        statuses: [status],
+        captureAddCollectionAll: captureAll,
+        captureUpdateDocAll: captureUpdateAll
+      })
+
+      const result = yield* createIssueFromTemplate({
+        project: projectIdentifier("TEST"),
+        template: templateIdentifier("Parent Template")
+      }).pipe(Effect.provide(testLayer))
+
+      expect(result.identifier).toBeDefined()
+      // Parent + 2 children all created via addCollection (children as top-level first)
+      expect(captureAll).toHaveLength(3)
+
+      // Parent issue
+      expect(captureAll[0].attributes.title).toBe("Parent Template")
+      expect(captureAll[0].collection).toBe("issues")
+
+      // Child issues initially created as top-level (attached to project)
+      expect(captureAll[1].attributes.title).toBe("Sub-task A")
+      expect(captureAll[1].collection).toBe("issues")
+      expect((captureAll[1].attributes as { priority: number }).priority).toBe(IssuePriority.High)
+
+      expect(captureAll[2].attributes.title).toBe("Sub-task B")
+      expect(captureAll[2].collection).toBe("issues")
+
+      // Then reparented via updateDoc
+      const reparentUpdates = captureUpdateAll.filter(
+        u => u.operations.attachedTo !== undefined
+      )
+      expect(reparentUpdates).toHaveLength(2)
+
+      // Result should include childrenCreated count
+      expect(result.childrenCreated).toBe(2)
+    }))
+
+  it.effect("skips children when includeChildren is false", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const status = makeStatus({ _id: "status-open" as Ref<Status>, name: "Open" })
+      const template = makeIssueTemplate({
+        title: "Parent Template",
+        children: [makeTemplateChild({ title: "Skipped Child" })]
+      })
+
+      const captureAll: MockConfig["captureAddCollectionAll"] = []
+      const testLayer = createTestLayerWithMocks({
+        projects: [project],
+        templates: [template],
+        statuses: [status],
+        captureAddCollectionAll: captureAll
+      })
+
+      const result = yield* createIssueFromTemplate({
+        project: projectIdentifier("TEST"),
+        template: templateIdentifier("Parent Template"),
+        includeChildren: false
+      }).pipe(Effect.provide(testLayer))
+
+      expect(result.identifier).toBeDefined()
+      // Only parent issue should be created
+      expect(captureAll).toHaveLength(1)
+      expect(captureAll[0].attributes.title).toBe("Parent Template")
+    }))
+
+  it.effect("creates no children when template has empty children array", () =>
+    Effect.gen(function*() {
+      const project = makeProject({ identifier: "TEST" })
+      const status = makeStatus({ _id: "status-open" as Ref<Status>, name: "Open" })
+      const template = makeIssueTemplate({
+        title: "No Children Template",
+        children: []
+      })
+
+      const captureAll: MockConfig["captureAddCollectionAll"] = []
+      const testLayer = createTestLayerWithMocks({
+        projects: [project],
+        templates: [template],
+        statuses: [status],
+        captureAddCollectionAll: captureAll
+      })
+
+      const result = yield* createIssueFromTemplate({
+        project: projectIdentifier("TEST"),
+        template: templateIdentifier("No Children Template")
+      }).pipe(Effect.provide(testLayer))
+
+      expect(result.identifier).toBeDefined()
+      // Only parent issue
+      expect(captureAll).toHaveLength(1)
     }))
 })

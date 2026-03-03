@@ -40,6 +40,7 @@ import {
   TagCategoryNotFoundError,
   TagNotFoundError,
   TeamspaceNotFoundError,
+  TemplateChildNotFoundError,
   TestPlanItemNotFoundError,
   ThreadReplyNotFoundError
 } from "../../src/huly/errors.js"
@@ -459,6 +460,23 @@ describe("Huly Errors", () => {
       }))
   })
 
+  describe("TemplateChildNotFoundError", () => {
+    it.effect("creates with fields", () =>
+      Effect.gen(function*() {
+        const error = new TemplateChildNotFoundError({ childId: "c-1", template: "tpl-1", project: "HULY" })
+        expect(error._tag).toBe("TemplateChildNotFoundError")
+        expect(error.childId).toBe("c-1")
+        expect(error.template).toBe("tpl-1")
+        expect(error.project).toBe("HULY")
+      }))
+
+    it.effect("generates message from fields", () =>
+      Effect.gen(function*() {
+        const error = new TemplateChildNotFoundError({ childId: "c-1", template: "tpl-1", project: "HULY" })
+        expect(error.message).toBe("Child template 'c-1' not found in template 'tpl-1' of project 'HULY'")
+      }))
+  })
+
   describe("NotificationNotFoundError", () => {
     // test-revizorro: approved
     it.effect("creates with notificationId", () =>
@@ -693,6 +711,8 @@ describe("Huly Errors", () => {
               return `component:${error.identifier}`
             case "IssueTemplateNotFoundError":
               return `template:${error.identifier}`
+            case "TemplateChildNotFoundError":
+              return `templatechild:${error.childId}`
             case "NotificationNotFoundError":
               return `notification:${error.notificationId}`
             case "NotificationContextNotFoundError":
@@ -746,6 +766,9 @@ describe("Huly Errors", () => {
         ).toBe("testplanitem:item-1")
         expect(matchError(new ComponentNotFoundError({ identifier: "cmp-1", project: "P" }))).toBe("component:cmp-1")
         expect(matchError(new IssueTemplateNotFoundError({ identifier: "tpl-1", project: "P" }))).toBe("template:tpl-1")
+        expect(
+          matchError(new TemplateChildNotFoundError({ childId: "c-1", template: "tpl-1", project: "P" }))
+        ).toBe("templatechild:c-1")
         expect(matchError(new NotificationNotFoundError({ notificationId: "n-1" }))).toBe("notification:n-1")
         expect(matchError(new NotificationContextNotFoundError({ contextId: "nc-1" }))).toBe("notifctx:nc-1")
         expect(matchError(new InvalidPersonUuidError({ uuid: "bad-uuid" }))).toBe("uuid:bad-uuid")
