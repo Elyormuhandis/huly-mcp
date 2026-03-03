@@ -72,17 +72,19 @@ export const listWorkspaceMembers = (
       limitedMembers,
       (member) =>
         Effect.gen(function*() {
-          let name: string | undefined
-          let email: string | undefined
+          const { email, name } = yield* Effect.gen(function*() {
+            const personInfoResult = yield* ops.getPersonInfo(member.person).pipe(Effect.option)
 
-          const personInfoResult = yield* ops.getPersonInfo(member.person).pipe(Effect.option)
-
-          if (Option.isSome(personInfoResult)) {
-            const personInfo = personInfoResult.value
-            name = personInfo.name
-            const emailSocialId = personInfo.socialIds.find((s) => s.type === "email")
-            email = emailSocialId?.value
-          }
+            if (Option.isSome(personInfoResult)) {
+              const personInfo = personInfoResult.value
+              const emailSocialId = personInfo.socialIds.find((s) => s.type === "email")
+              return {
+                name: personInfo.name as string | undefined,
+                email: emailSocialId?.value
+              }
+            }
+            return { name: undefined as string | undefined, email: undefined as string | undefined }
+          })
 
           return {
             personId: PersonUuid.make(member.person),

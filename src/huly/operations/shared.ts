@@ -224,22 +224,21 @@ export const findIssueInProject = (
       project.identifier
     )
 
-    let issue = yield* client.findOne<HulyIssue>(
+    const issue = (yield* client.findOne<HulyIssue>(
       tracker.class.Issue,
       {
         space: project._id,
         identifier: fullIdentifier
       }
-    )
-    if (issue === undefined && number !== null) {
-      issue = yield* client.findOne<HulyIssue>(
+    )) ?? (number !== null
+      ? yield* client.findOne<HulyIssue>(
         tracker.class.Issue,
         {
           space: project._id,
           number
         }
       )
-    }
+      : undefined)
     if (issue === undefined) {
       return yield* new IssueNotFoundError({
         identifier: identifierStr,

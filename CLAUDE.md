@@ -16,27 +16,13 @@ Run before considering work complete:
 1. `pnpm build && pnpm typecheck && pnpm lint && pnpm test`
 2. Integration tests against local Huly (Docker) — **required** for any new feature, major change, or pre-release. Do not defer to the user; run them yourself. See `INTEGRATION_TESTING.md` for test patterns and `CLAUDE.local.md` for credentials/setup.
 
-## Code Style
-
-No comments that repeat the code. If the code says what it does, don't add a comment saying the same thing.
-
-## No Dead Code
-
-Every function, type, and export must have at least one call site at time of writing. Never write code "for future use" unless the user explicitly requests it.
-
-## Tests
-
-Don't write tests that only verify compile-time guarantees (type assignments, interface conformance). If the compiler already checks it, a test adds nothing.
-
 ## Type Safety
 
-Type casts (`as T`) are a sin. Avoid them. When unavoidable:
-1. Add a comment explaining WHY the cast is necessary
-2. Document what evidence/API docs support the cast being safe
-3. Consider if a generic type parameter or type guard could eliminate the cast
+Type casts (`as T`) are a sin. Avoid them. All data crossing system boundaries (APIs etc.) must be strongly typed with Effect Schema.
 
-All data crossing system boundaries (APIs etc.) must be strongly typed — both inbound (decoding) and outbound (encoding), with Effect Schema.
+## Code Review
 
+Code review agents must consult `.claude/review-rules.md` for project-specific quality gates.
 <!-- effect-solutions:start -->
 ## Effect Best Practices
 

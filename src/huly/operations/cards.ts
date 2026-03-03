@@ -276,16 +276,15 @@ export const getCard = (
       cardSpace: params.cardSpace
     })
 
-    let content: string | undefined
-    if (card.content) {
-      content = yield* client.fetchMarkup(
+    const content: string | undefined = card.content
+      ? yield* client.fetchMarkup(
         card._class,
         card._id,
         "content",
         card.content,
         "markdown"
       )
-    }
+      : undefined
 
     return {
       id: CardId.make(card._id),
@@ -326,27 +325,33 @@ export const createCard = (
       "markdown"
     )
 
-    let parentRef: Ref<HulyCard> | null = null
-    let parentInfo: Array<{ _id: Ref<HulyCard>; _class: Ref<HulyMasterTag>; title: string }> = []
-    if (params.parent !== undefined) {
-      const parentCard = yield* findByNameOrId(
-        client,
-        cardPlugin.class.Card,
-        { space: cardSpace._id, title: params.parent },
-        { space: cardSpace._id, _id: toRef<HulyCard>(params.parent) }
-      )
-      if (parentCard === undefined) {
-        return yield* new CardNotFoundError({
-          identifier: params.parent,
-          cardSpace: cardSpace.name
-        })
+    const parentParam = params.parent
+    const { parentInfo, parentRef } = parentParam !== undefined
+      ? yield* Effect.gen(function*() {
+        const parentCard = yield* findByNameOrId(
+          client,
+          cardPlugin.class.Card,
+          { space: cardSpace._id, title: parentParam },
+          { space: cardSpace._id, _id: toRef<HulyCard>(parentParam) }
+        )
+        if (parentCard === undefined) {
+          return yield* new CardNotFoundError({
+            identifier: parentParam,
+            cardSpace: cardSpace.name
+          })
+        }
+        return {
+          parentRef: parentCard._id as Ref<HulyCard> | null,
+          parentInfo: [
+            ...parentCard.parentInfo,
+            { _id: parentCard._id, _class: parentCard._class, title: parentCard.title }
+          ]
+        }
+      })
+      : {
+        parentRef: null as Ref<HulyCard> | null,
+        parentInfo: [] as Array<{ _id: Ref<HulyCard>; _class: Ref<HulyMasterTag>; title: string }>
       }
-      parentRef = parentCard._id
-      parentInfo = [
-        ...parentCard.parentInfo,
-        { _id: parentCard._id, _class: parentCard._class, title: parentCard.title }
-      ]
-    }
 
     const cardData: Data<HulyCard> = {
       title: params.title,

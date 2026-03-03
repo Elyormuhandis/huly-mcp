@@ -254,18 +254,18 @@ export const getChannel = (
   Effect.gen(function*() {
     const { channel, client } = yield* findChannel(params.channel)
 
-    let memberNames: Array<string> | undefined
-    if (channel.members.length > 0) {
-      // Space.members is typed as AccountUuid[] in @hcengineering/core
-      const accountUuidToName = yield* buildAccountUuidToNameMap(
-        client,
-        channel.members
-      )
+    const memberNames: Array<string> | undefined = channel.members.length > 0
+      ? yield* Effect.gen(function*() {
+        const accountUuidToName = yield* buildAccountUuidToNameMap(
+          client,
+          channel.members
+        )
 
-      memberNames = channel.members
-        .map((m) => accountUuidToName.get(m))
-        .filter((n): n is string => n !== undefined)
-    }
+        return channel.members
+          .map((m) => accountUuidToName.get(m))
+          .filter((n): n is string => n !== undefined)
+      })
+      : undefined
 
     const result: Channel = {
       id: ChannelId.make(channel._id),

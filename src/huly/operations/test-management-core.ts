@@ -1,4 +1,3 @@
-/* eslint-disable max-lines -- test suite + test case CRUD with markup handling form a single domain */
 import type { Employee } from "@hcengineering/contact"
 import type {
   AttachedData,
@@ -207,11 +206,9 @@ export const createTestSuite = (
     // Resolve parent first — needed for both idempotency check and creation.
     // Default parent is the project class ref (Huly convention for root suites).
     // toRef bridges Ref<Class<TestProject>> -> Ref<TestSuite> at the SDK boundary.
-    let parentRef: Ref<TestSuite> = toRef<TestSuite>(testManagement.class.TestProject)
-    if (params.parent !== undefined) {
-      const parentSuite = yield* findTestSuite(client, project, params.parent)
-      parentRef = parentSuite._id
-    }
+    const parentRef: Ref<TestSuite> = params.parent !== undefined
+      ? (yield* findTestSuite(client, project, params.parent))._id
+      : toRef<TestSuite>(testManagement.class.TestProject)
 
     const existing = yield* client.findOne<TestSuite>(
       testManagement.class.TestSuite,
@@ -368,11 +365,9 @@ export const createTestCase = (
 
     const caseId: Ref<TestCase> = generateId()
 
-    let assigneeRef: Ref<Employee> | null = null
-    if (params.assignee !== undefined) {
-      const person = yield* resolveAssignee(params.assignee)
-      assigneeRef = toRef<Employee>(person._id)
-    }
+    const assigneeRef: Ref<Employee> | null = params.assignee !== undefined
+      ? toRef<Employee>((yield* resolveAssignee(params.assignee))._id)
+      : null
 
     const typeEnum = params.type !== undefined
       ? stringToTestCaseType(params.type) ?? TestCaseType.Functional
@@ -384,16 +379,15 @@ export const createTestCase = (
       ? stringToTestCaseStatus(params.status) ?? TestCaseStatus.Draft
       : TestCaseStatus.Draft
 
-    let descRef: MarkupBlobRef | null = null
-    if (params.description !== undefined && params.description.trim() !== "") {
-      descRef = yield* client.uploadMarkup(
+    const descRef: MarkupBlobRef | null = params.description !== undefined && params.description.trim() !== ""
+      ? yield* client.uploadMarkup(
         testManagement.class.TestCase,
         caseId,
         "description",
         params.description,
         "markdown"
       )
-    }
+      : null
 
     // TestCase is an AttachedDoc; no typed constructor for AttachedData<TestCase>.
     // Build as Record and cast once — unavoidable at the SDK boundary.

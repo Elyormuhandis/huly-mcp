@@ -32,17 +32,13 @@ export const findCategoryByIdOrLabel = (
   idOrLabel: string
 ): Effect.Effect<HulyTagCategory | undefined, HulyClientError> =>
   Effect.gen(function*() {
-    let cat = yield* client.findOne<HulyTagCategory>(
+    const cat = (yield* client.findOne<HulyTagCategory>(
       tags.class.TagCategory,
       { _id: toRef<HulyTagCategory>(idOrLabel) }
-    )
-
-    if (cat === undefined) {
-      cat = yield* client.findOne<HulyTagCategory>(
-        tags.class.TagCategory,
-        { label: idOrLabel }
-      )
-    }
+    )) ?? (yield* client.findOne<HulyTagCategory>(
+      tags.class.TagCategory,
+      { label: idOrLabel }
+    ))
 
     return cat
   })

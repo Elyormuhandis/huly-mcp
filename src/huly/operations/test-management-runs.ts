@@ -125,16 +125,15 @@ export const createTestRun = (
     const client = yield* HulyClient
     const project = yield* findTestProject(client, params.project)
     const runId: Ref<TestRun> = generateId()
-    let descRef: MarkupBlobRef | null = null
-    if (params.description !== undefined && params.description.trim() !== "") {
-      descRef = yield* client.uploadMarkup(
+    const descRef: MarkupBlobRef | null = params.description !== undefined && params.description.trim() !== ""
+      ? yield* client.uploadMarkup(
         testManagement.class.TestRun,
         runId,
         "description",
         params.description,
         "markdown"
       )
-    }
+      : null
     yield* client.createDoc(testManagement.class.TestRun, project._id, {
       name: params.name,
       description: descRef,

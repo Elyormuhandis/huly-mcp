@@ -32,23 +32,19 @@ const findTagByIdOrTitle = (
   idOrTitle: string
 ): Effect.Effect<HulyTagElement | undefined, HulyClientError> =>
   Effect.gen(function*() {
-    let tag = yield* client.findOne<HulyTagElement>(
+    const tag = (yield* client.findOne<HulyTagElement>(
       tags.class.TagElement,
       {
         _id: toRef<HulyTagElement>(idOrTitle),
         targetClass: issueClassRef
       }
-    )
-
-    if (tag === undefined) {
-      tag = yield* client.findOne<HulyTagElement>(
-        tags.class.TagElement,
-        {
-          title: idOrTitle,
-          targetClass: issueClassRef
-        }
-      )
-    }
+    )) ?? (yield* client.findOne<HulyTagElement>(
+      tags.class.TagElement,
+      {
+        title: idOrTitle,
+        targetClass: issueClassRef
+      }
+    ))
 
     return tag
   })

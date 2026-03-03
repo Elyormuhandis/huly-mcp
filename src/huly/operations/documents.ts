@@ -395,16 +395,15 @@ export const getDocument = (
       document: params.document
     })
 
-    let content: string | undefined
-    if (doc.content) {
-      content = yield* client.fetchMarkup(
+    const content: string | undefined = doc.content
+      ? yield* client.fetchMarkup(
         doc._class,
         doc._id,
         "content",
         doc.content,
         "markdown"
       )
-    }
+      : undefined
 
     const result: Document = {
       id: DocumentId.make(doc._id),
@@ -447,16 +446,15 @@ export const createDocument = (
     )
     const rank = makeRank(lastDoc?.rank, undefined)
 
-    let contentMarkupRef: MarkupBlobRef | null = null
-    if (params.content !== undefined && params.content.trim() !== "") {
-      contentMarkupRef = yield* client.uploadMarkup(
+    const contentMarkupRef: MarkupBlobRef | null = params.content !== undefined && params.content.trim() !== ""
+      ? yield* client.uploadMarkup(
         documentPlugin.class.Document,
         documentId,
         "content",
         params.content,
         "markdown"
       )
-    }
+      : null
 
     const documentData: Data<HulyDocument> = {
       title: params.title,

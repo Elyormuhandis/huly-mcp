@@ -111,16 +111,15 @@ export const createTestPlan = (
       return { id: TestPlanId.make(existing._id), name: existing.name, created: false }
     }
     const planId: Ref<TestPlan> = generateId()
-    let descRef: MarkupBlobRef | null = null
-    if (params.description !== undefined && params.description.trim() !== "") {
-      descRef = yield* client.uploadMarkup(
+    const descRef: MarkupBlobRef | null = params.description !== undefined && params.description.trim() !== ""
+      ? yield* client.uploadMarkup(
         testManagement.class.TestPlan,
         planId,
         "description",
         params.description,
         "markdown"
       )
-    }
+      : null
     yield* client.createDoc(testManagement.class.TestPlan, project._id, {
       name: params.name,
       description: descRef

@@ -188,22 +188,19 @@ const resolveEventInputs = (
     const cal = yield* getDefaultCalendar(client)
     const calendarRef = cal?._id ?? toRef<HulyCalendar>("")
 
-    let participantRefs: Array<Ref<Contact>> = []
-    if (params.participants && params.participants.length > 0) {
-      const persons = yield* findPersonsByEmails(client, params.participants)
-      participantRefs = persons.map(p => p._id)
-    }
+    const participantRefs: Array<Ref<Contact>> = params.participants && params.participants.length > 0
+      ? (yield* findPersonsByEmails(client, params.participants)).map(p => p._id)
+      : []
 
-    let descriptionRef: MarkupBlobRef | null = null
-    if (params.description && params.description.trim() !== "") {
-      descriptionRef = yield* client.uploadMarkup(
+    const descriptionRef: MarkupBlobRef | null = params.description && params.description.trim() !== ""
+      ? yield* client.uploadMarkup(
         eventClass,
         toRef<Doc>(eventId),
         "description",
         params.description,
         "markdown"
       )
-    }
+      : null
 
     return { calendarRef, participantRefs, descriptionRef }
   })
@@ -267,16 +264,15 @@ export const getEvent = (
 
     const participants = yield* buildParticipants(client, event.participants)
 
-    let description: string | undefined
-    if (event.description) {
-      description = yield* client.fetchMarkup(
+    const description: string | undefined = event.description
+      ? yield* client.fetchMarkup(
         calendar.class.Event,
         event._id,
         "description",
         descriptionAsMarkupRef(event.description),
         "markdown"
       )
-    }
+      : undefined
 
     const result: Event = {
       eventId: EventId.make(event.eventId),

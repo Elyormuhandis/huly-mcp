@@ -92,23 +92,19 @@ const findTemplateByIdOrTitle = (
   templateIdOrTitle: string
 ): Effect.Effect<HulyIssueTemplate | undefined, HulyClientError> =>
   Effect.gen(function*() {
-    let template = yield* client.findOne<HulyIssueTemplate>(
+    const template = (yield* client.findOne<HulyIssueTemplate>(
       tracker.class.IssueTemplate,
       {
         space: projectId,
         _id: toRef<HulyIssueTemplate>(templateIdOrTitle)
       }
-    )
-
-    if (template === undefined) {
-      template = yield* client.findOne<HulyIssueTemplate>(
-        tracker.class.IssueTemplate,
-        {
-          space: projectId,
-          title: templateIdOrTitle
-        }
-      )
-    }
+    )) ?? (yield* client.findOne<HulyIssueTemplate>(
+      tracker.class.IssueTemplate,
+      {
+        space: projectId,
+        title: templateIdOrTitle
+      }
+    ))
 
     return template
   })
@@ -168,27 +164,27 @@ export const getIssueTemplate = (
   Effect.gen(function*() {
     const { client, template } = yield* findProjectAndTemplate(params)
 
-    let assigneeName: string | undefined
-    if (template.assignee !== null) {
-      const person = yield* client.findOne<Person>(
-        contact.class.Person,
-        { _id: template.assignee }
-      )
-      if (person) {
-        assigneeName = person.name
-      }
-    }
+    const templateAssignee = template.assignee
+    const assigneeName: string | undefined = templateAssignee !== null
+      ? yield* Effect.gen(function*() {
+        const person = yield* client.findOne<Person>(
+          contact.class.Person,
+          { _id: templateAssignee }
+        )
+        return person?.name
+      })
+      : undefined
 
-    let componentLabel: string | undefined
-    if (template.component !== null) {
-      const component = yield* client.findOne<HulyComponent>(
-        tracker.class.Component,
-        { _id: template.component }
-      )
-      if (component) {
-        componentLabel = component.label
-      }
-    }
+    const templateComponent = template.component
+    const componentLabel: string | undefined = templateComponent !== null
+      ? yield* Effect.gen(function*() {
+        const component = yield* client.findOne<HulyComponent>(
+          tracker.class.Component,
+          { _id: templateComponent }
+        )
+        return component?.label
+      })
+      : undefined
 
     const result: IssueTemplate = {
       id: IssueTemplateId.make(template._id),
@@ -214,26 +210,30 @@ export const createIssueTemplate = (
 
     const templateId: Ref<HulyIssueTemplate> = generateId()
 
-    let assigneeRef: Ref<Person> | null = null
-    if (params.assignee !== undefined) {
-      const person = yield* findPersonByEmailOrName(client, params.assignee)
-      if (person === undefined) {
-        return yield* new PersonNotFoundError({ identifier: params.assignee })
-      }
-      assigneeRef = person._id
-    }
+    const assigneeParam = params.assignee
+    const assigneeRef: Ref<Person> | null = assigneeParam !== undefined
+      ? yield* Effect.gen(function*() {
+        const person = yield* findPersonByEmailOrName(client, assigneeParam)
+        if (person === undefined) {
+          return yield* new PersonNotFoundError({ identifier: assigneeParam })
+        }
+        return person._id
+      })
+      : null
 
-    let componentRef: Ref<HulyComponent> | null = null
-    if (params.component !== undefined) {
-      const component = yield* findComponentByIdOrLabel(client, project._id, params.component)
-      if (component === undefined) {
-        return yield* new ComponentNotFoundError({
-          identifier: params.component,
-          project: params.project
-        })
-      }
-      componentRef = component._id
-    }
+    const componentParam = params.component
+    const componentRef: Ref<HulyComponent> | null = componentParam !== undefined
+      ? yield* Effect.gen(function*() {
+        const component = yield* findComponentByIdOrLabel(client, project._id, componentParam)
+        if (component === undefined) {
+          return yield* new ComponentNotFoundError({
+            identifier: componentParam,
+            project: params.project
+          })
+        }
+        return component._id
+      })
+      : null
 
     const priority = stringToPriority(params.priority || "no-priority")
 
@@ -268,24 +268,28 @@ export const createIssueFromTemplate = (
     const description = params.description ?? template.description
     const priority = params.priority ?? priorityToString(template.priority)
 
-    let assignee = params.assignee
-    if (assignee === undefined && template.assignee !== null) {
-      const person = yield* client.findOne<Person>(
-        contact.class.Person,
-        { _id: template.assignee }
-      )
-      if (person) {
-        const emailCh = yield* client.findOne<Channel>(
-          contact.class.Channel,
-          {
-            attachedTo: person._id,
-            provider: contact.channelProvider.Email
-          }
+    const templateAssigneeRef = template.assignee
+    const assignee = params.assignee !== undefined
+      ? params.assignee
+      : templateAssigneeRef !== null
+      ? yield* Effect.gen(function*() {
+        const person = yield* client.findOne<Person>(
+          contact.class.Person,
+          { _id: templateAssigneeRef }
         )
-        // Fall back to name for findPersonByEmailOrName lookup
-        assignee = Email.make(emailCh?.value ?? person.name)
-      }
-    }
+        if (person) {
+          const emailCh = yield* client.findOne<Channel>(
+            contact.class.Channel,
+            {
+              attachedTo: person._id,
+              provider: contact.channelProvider.Email
+            }
+          )
+          return Email.make(emailCh?.value ?? person.name)
+        }
+        return undefined
+      })
+      : undefined
 
     const issueParams: CreateIssueParams = {
       project: params.project,

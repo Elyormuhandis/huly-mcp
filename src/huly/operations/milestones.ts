@@ -229,12 +229,9 @@ export const setIssueMilestone = (
   Effect.gen(function*() {
     const { client, issue, project } = yield* findProjectAndIssue(params)
 
-    let milestoneRef: Ref<HulyMilestone> | null = null
-
-    if (params.milestone !== null) {
-      const milestone = yield* findMilestone(client, project, params.milestone, params.project)
-      milestoneRef = milestone._id
-    }
+    const milestoneRef: Ref<HulyMilestone> | null = params.milestone !== null
+      ? (yield* findMilestone(client, project, params.milestone, params.project))._id
+      : null
 
     yield* client.updateDoc(
       tracker.class.Issue,

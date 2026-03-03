@@ -74,23 +74,19 @@ export const findComponentByIdOrLabel = (
   componentIdOrLabel: string
 ): Effect.Effect<HulyComponent | undefined, HulyClientError> =>
   Effect.gen(function*() {
-    let component = yield* client.findOne<HulyComponent>(
+    const component = (yield* client.findOne<HulyComponent>(
       tracker.class.Component,
       {
         space: projectId,
         _id: toRef<HulyComponent>(componentIdOrLabel)
       }
-    )
-
-    if (component === undefined) {
-      component = yield* client.findOne<HulyComponent>(
-        tracker.class.Component,
-        {
-          space: projectId,
-          label: componentIdOrLabel
-        }
-      )
-    }
+    )) ?? (yield* client.findOne<HulyComponent>(
+      tracker.class.Component,
+      {
+        space: projectId,
+        label: componentIdOrLabel
+      }
+    ))
 
     return component
   })
@@ -168,16 +164,16 @@ export const getComponent = (
   Effect.gen(function*() {
     const { client, component } = yield* findProjectAndComponent(params)
 
-    let leadName: string | undefined
-    if (component.lead !== null) {
-      const person = yield* client.findOne<Person>(
-        contact.class.Person,
-        { _id: component.lead }
-      )
-      if (person) {
-        leadName = person.name
-      }
-    }
+    const componentLead = component.lead
+    const leadName: string | undefined = componentLead !== null
+      ? yield* Effect.gen(function*() {
+        const person = yield* client.findOne<Person>(
+          contact.class.Person,
+          { _id: componentLead }
+        )
+        return person?.name
+      })
+      : undefined
 
     const result: Component = {
       id: ComponentId.make(component._id),
@@ -200,16 +196,18 @@ export const createComponent = (
 
     const componentId: Ref<HulyComponent> = generateId()
 
-    let leadRef: Ref<Employee> | null = null
-    if (params.lead !== undefined) {
-      const person = yield* findPersonByEmailOrName(client, params.lead)
-      if (person === undefined) {
-        return yield* new PersonNotFoundError({ identifier: params.lead })
-      }
-      // Huly API: Component.lead expects Ref<Employee>, but we look up Person by email.
-      // Employee extends Person, so this is safe when person is actually an employee.
-      leadRef = toRef<Employee>(person._id)
-    }
+    const leadParam = params.lead
+    const leadRef: Ref<Employee> | null = leadParam !== undefined
+      ? yield* Effect.gen(function*() {
+        const person = yield* findPersonByEmailOrName(client, leadParam)
+        if (person === undefined) {
+          return yield* new PersonNotFoundError({ identifier: leadParam })
+        }
+        // Huly API: Component.lead expects Ref<Employee>, but we look up Person by email.
+        // Employee extends Person, so this is safe when person is actually an employee.
+        return toRef<Employee>(person._id)
+      })
+      : null
 
     const componentData: Data<HulyComponent> = {
       label: params.label,
@@ -278,20 +276,21 @@ export const setIssueComponent = (
   Effect.gen(function*() {
     const { client, issue, project } = yield* findProjectAndIssue(params)
 
-    let componentRef: Ref<HulyComponent> | null = null
+    const componentParam = params.component
+    const componentRef: Ref<HulyComponent> | null = componentParam !== null
+      ? yield* Effect.gen(function*() {
+        const component = yield* findComponentByIdOrLabel(client, project._id, componentParam)
 
-    if (params.component !== null) {
-      const component = yield* findComponentByIdOrLabel(client, project._id, params.component)
+        if (component === undefined) {
+          return yield* new ComponentNotFoundError({
+            identifier: componentParam,
+            project: params.project
+          })
+        }
 
-      if (component === undefined) {
-        return yield* new ComponentNotFoundError({
-          identifier: params.component,
-          project: params.project
-        })
-      }
-
-      componentRef = component._id
-    }
+        return component._id
+      })
+      : null
 
     yield* client.updateDoc(
       tracker.class.Issue,
