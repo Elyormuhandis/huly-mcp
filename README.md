@@ -153,13 +153,14 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npx -y @firfi/huly-m
 | Tool | Description |
 |------|-------------|
 | `preview_deletion` | Preview the impact of deleting a Huly entity before actually deleting it. Shows affected sub-entities, relations, and warnings. Supports issues, projects, components, and milestones. Use this to understand cascade effects before calling a delete operation. |
-| `list_issues` | Query Huly issues with optional filters. Returns issues sorted by modification date (newest first). Supports filtering by project, status, assignee, and milestone. Supports searching by title substring (titleSearch) and description content (descriptionSearch). |
+| `list_issues` | Query Huly issues with optional filters. Returns issues sorted by modification date (newest first). Supports filtering by project, status, assignee, component, and parentIssue (to list children of a specific issue). Supports searching by title substring (titleSearch) and description content (descriptionSearch). |
 | `get_issue` | Retrieve full details for a Huly issue including markdown description. Use this to view issue content, comments, or full metadata. |
 | `create_issue` | Create a new issue in a Huly project. Optionally create as a sub-issue by specifying parentIssue. Description supports markdown formatting. Returns the created issue identifier. |
 | `update_issue` | Update fields on an existing Huly issue. Only provided fields are modified. Description updates support markdown. |
 | `add_issue_label` | Add a tag/label to a Huly issue. Creates the tag if it doesn't exist in the project. |
 | `remove_issue_label` | Remove a tag/label from a Huly issue. Detaches the label reference; does not delete the label definition. |
 | `delete_issue` | Permanently delete a Huly issue. This action cannot be undone. |
+| `move_issue` | Move an issue to a new parent (making it a sub-issue) or to top-level (null). Updates parent/child relationships and sub-issue counts. |
 | `list_components` | List components in a Huly project. Components organize issues by area/feature. Returns components sorted by modification date (newest first). |
 | `get_component` | Retrieve full details for a Huly component. Use this to view component content and metadata. |
 | `create_component` | Create a new component in a Huly project. Components help organize issues by area/feature. Returns the created component ID and label. |
@@ -201,6 +202,10 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npx -y @firfi/huly-m
 | Tool | Description |
 |------|-------------|
 | `list_teamspaces` | List all Huly document teamspaces. Returns teamspaces sorted by name. Supports filtering by archived status. |
+| `get_teamspace` | Get details for a Huly document teamspace including document count. Finds by name or ID, including archived teamspaces. |
+| `create_teamspace` | Create a new Huly document teamspace. Idempotent: returns existing teamspace if one with the same name exists. |
+| `update_teamspace` | Update fields on an existing Huly document teamspace. Only provided fields are modified. Set description to null to clear it. |
+| `delete_teamspace` | Permanently delete a Huly document teamspace. This action cannot be undone. |
 | `list_documents` | List documents in a Huly teamspace. Returns documents sorted by modification date (newest first). Supports searching by title substring (titleSearch) and content (contentSearch). |
 | `get_document` | Retrieve full details for a Huly document including markdown content. Use this to view document content and metadata. |
 | `create_document` | Create a new document in a Huly teamspace. Content supports markdown formatting. Returns the created document id. |
