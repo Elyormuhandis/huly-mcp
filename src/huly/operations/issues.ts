@@ -36,12 +36,14 @@ import type {
   Issue,
   IssueSummary,
   ListIssuesParams,
+  MoveIssueParams,
   UpdateIssueParams
 } from "../../domain/schemas.js"
 import type {
   AddLabelResult,
   CreateIssueResult,
   DeleteIssueResult,
+  MoveIssueResult,
   UpdateIssueResult
 } from "../../domain/schemas/issues.js"
 import {
@@ -77,6 +79,7 @@ import {
 type ListIssuesError =
   | HulyClientError
   | ProjectNotFoundError
+  | IssueNotFoundError
   | InvalidStatusError
   | ComponentNotFoundError
 
@@ -100,6 +103,11 @@ type UpdateIssueError =
   | PersonNotFoundError
 
 type AddLabelError =
+  | HulyClientError
+  | ProjectNotFoundError
+  | IssueNotFoundError
+
+type MoveIssueError =
   | HulyClientError
   | ProjectNotFoundError
   | IssueNotFoundError
@@ -229,6 +237,11 @@ export const listIssues = (
       query.$search = params.descriptionSearch
     }
 
+    if (params.parentIssue !== undefined) {
+      const parentIssue = yield* findIssueInProject(client, project, params.parentIssue)
+      query.attachedTo = parentIssue._id
+    }
+
     if (params.component !== undefined) {
       const component = yield* findComponentByIdOrLabel(client, project._id, params.component)
       if (component !== undefined) {
@@ -262,6 +275,9 @@ export const listIssues = (
     for (const issue of issues) {
       const statusName = resolveStatusName(statuses, issue.status)
       const assigneeName = issue.$lookup?.assignee?.name
+      const directParent = issue.parents.length > 0
+        ? issue.parents[issue.parents.length - 1]
+        : undefined
 
       summaries.push({
         identifier: IssueIdentifier.make(issue.identifier),
@@ -269,6 +285,8 @@ export const listIssues = (
         status: StatusName.make(statusName),
         priority: priorityToString(issue.priority),
         assignee: assigneeName !== undefined ? PersonName.make(assigneeName) : undefined,
+        parentIssue: directParent !== undefined ? IssueIdentifier.make(directParent.identifier) : undefined,
+        subIssues: issue.subIssues > 0 ? issue.subIssues : undefined,
         modifiedOn: issue.modifiedOn
       })
     }
@@ -337,6 +355,10 @@ export const getIssue = (
       )
     }
 
+    const directParent = issue.parents.length > 0
+      ? issue.parents[issue.parents.length - 1]
+      : undefined
+
     const result: Issue = {
       identifier: IssueIdentifier.make(issue.identifier),
       title: issue.title,
@@ -346,6 +368,8 @@ export const getIssue = (
       assignee: assigneeName !== undefined ? PersonName.make(assigneeName) : undefined,
       assigneeRef,
       project: params.project,
+      parentIssue: directParent !== undefined ? IssueIdentifier.make(directParent.identifier) : undefined,
+      subIssues: issue.subIssues > 0 ? issue.subIssues : undefined,
       modifiedOn: issue.modifiedOn,
       createdOn: issue.createdOn,
       dueDate: issue.dueDate ?? undefined,
@@ -676,4 +700,126 @@ export const deleteIssue = (
     )
 
     return { identifier: IssueIdentifier.make(issue.identifier), deleted: true }
+  })
+
+// --- Move Issue Operation ---
+
+export const moveIssue = (
+  params: MoveIssueParams
+): Effect.Effect<MoveIssueResult, MoveIssueError, HulyClient> =>
+  Effect.gen(function*() {
+    const { client, issue, project } = yield* findProjectAndIssue(params)
+
+    const oldParentIsIssue = issue.attachedToClass === tracker.class.Issue
+
+    let newAttachedTo: Ref<Doc>
+    let newAttachedToClass: Ref<Class<Doc>>
+    let newCollection: string
+    let newParents: Array<IssueParentInfo>
+    let newParentIdentifier: string | undefined
+
+    if (params.newParent !== null) {
+      const parentIssue = yield* findIssueInProject(client, project, params.newParent)
+      newAttachedTo = parentIssue._id
+      newAttachedToClass = tracker.class.Issue
+      newCollection = "subIssues"
+      newParents = [
+        ...parentIssue.parents,
+        {
+          parentId: parentIssue._id,
+          identifier: parentIssue.identifier,
+          parentTitle: parentIssue.title,
+          space: project._id
+        }
+      ]
+      newParentIdentifier = parentIssue.identifier
+    } else {
+      newAttachedTo = project._id
+      newAttachedToClass = tracker.class.Project
+      newCollection = "issues"
+      newParents = []
+    }
+
+    // attachedTo is typed as Ref<Issue> in DocumentUpdate<HulyIssue>, but for top-level issues
+    // it points to the project (Ref<Project>). Both are branded strings at runtime.
+    const updateOps: DocumentUpdate<HulyIssue> = {
+      attachedTo: toRef<HulyIssue>(newAttachedTo),
+      attachedToClass: newAttachedToClass,
+      collection: newCollection,
+      parents: newParents
+    }
+
+    yield* client.updateDoc(
+      tracker.class.Issue,
+      project._id,
+      issue._id,
+      updateOps
+    )
+
+    // Update subIssues count on old parent (decrement) if it was an issue
+    if (oldParentIsIssue) {
+      yield* client.updateDoc(
+        tracker.class.Issue,
+        project._id,
+        // issue.attachedTo is Ref<Doc>; for sub-issues it points to the parent issue.
+        // Cast needed because updateDoc expects Ref<HulyIssue> but attachedTo is Ref<Doc>.
+        toRef<HulyIssue>(issue.attachedTo),
+        { $inc: { subIssues: -1 } }
+      )
+    }
+
+    // Update subIssues count on new parent (increment) if it's an issue
+    if (params.newParent !== null) {
+      yield* client.updateDoc(
+        tracker.class.Issue,
+        project._id,
+        toRef<HulyIssue>(newAttachedTo),
+        { $inc: { subIssues: 1 } }
+      )
+    }
+
+    // Update parents arrays on all descendant issues
+    if (issue.subIssues > 0) {
+      yield* updateDescendantParents(client, project._id, issue, newParents)
+    }
+
+    const result: MoveIssueResult = {
+      identifier: IssueIdentifier.make(issue.identifier),
+      moved: true
+    }
+    if (newParentIdentifier !== undefined) {
+      return { ...result, newParent: IssueIdentifier.make(newParentIdentifier) }
+    }
+    return result
+  })
+
+const updateDescendantParents = (
+  client: HulyClient["Type"],
+  spaceId: Ref<HulyProject>,
+  parentIssue: HulyIssue,
+  parentNewParents: Array<IssueParentInfo>
+): Effect.Effect<void, HulyClientError> =>
+  Effect.gen(function*() {
+    const thisParentInfo: IssueParentInfo = {
+      parentId: parentIssue._id,
+      identifier: parentIssue.identifier,
+      parentTitle: parentIssue.title,
+      space: spaceId
+    }
+    const children = yield* client.findAll<HulyIssue>(
+      tracker.class.Issue,
+      { attachedTo: parentIssue._id, space: spaceId }
+    )
+    for (const child of children) {
+      const childNewParents = [...parentNewParents, thisParentInfo]
+      yield* client.updateDoc(
+        tracker.class.Issue,
+        spaceId,
+        child._id,
+        { parents: childNewParents }
+      )
+      if (child.subIssues > 0) {
+        yield* updateDescendantParents(client, spaceId, child, childNewParents)
+      }
+    }
   })

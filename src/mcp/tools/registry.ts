@@ -39,7 +39,8 @@ const UPDATE_PREFIXES = [
   "stop_",
   "save_",
   "unsave_",
-  "remove_"
+  "remove_",
+  "move_"
 ]
 const DELETE_PREFIXES = ["delete_"]
 

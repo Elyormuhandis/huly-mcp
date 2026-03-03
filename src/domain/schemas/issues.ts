@@ -73,6 +73,8 @@ export const IssueSummarySchema = Schema.Struct({
   status: StatusName,
   priority: Schema.optional(IssuePrioritySchema),
   assignee: Schema.optional(PersonName),
+  parentIssue: Schema.optional(IssueIdentifier),
+  subIssues: Schema.optional(Schema.Number),
   modifiedOn: Schema.optional(Timestamp)
 }).annotations({
   title: "IssueSummary",
@@ -91,6 +93,8 @@ export const IssueSchema = Schema.Struct({
   assigneeRef: Schema.optional(PersonRefSchema),
   labels: Schema.optional(Schema.Array(LabelSchema)),
   project: ProjectIdentifier,
+  parentIssue: Schema.optional(IssueIdentifier),
+  subIssues: Schema.optional(Schema.Number),
   modifiedOn: Schema.optional(Timestamp),
   createdOn: Schema.optional(Timestamp),
   dueDate: Schema.optional(Schema.NullOr(Timestamp)),
@@ -111,6 +115,9 @@ export const ListIssuesParamsSchema = Schema.Struct({
   })),
   assignee: Schema.optional(Email.annotations({
     description: "Filter by assignee email"
+  })),
+  parentIssue: Schema.optional(IssueIdentifier.annotations({
+    description: "Filter to children of this parent issue (e.g., 'HULY-42')"
   })),
   titleSearch: Schema.optional(Schema.String.annotations({
     description: "Search issues by title substring (case-insensitive)"
@@ -260,6 +267,23 @@ export const RemoveLabelParamsSchema = Schema.Struct({
 
 export type RemoveLabelParams = Schema.Schema.Type<typeof RemoveLabelParamsSchema>
 
+export const MoveIssueParamsSchema = Schema.Struct({
+  project: ProjectIdentifier.annotations({
+    description: "Project identifier (e.g., 'HULY')"
+  }),
+  identifier: IssueIdentifier.annotations({
+    description: "Issue to move (e.g., 'HULY-123')"
+  }),
+  newParent: Schema.NullOr(IssueIdentifier).annotations({
+    description: "New parent issue identifier, or null to make top-level"
+  })
+}).annotations({
+  title: "MoveIssueParams",
+  description: "Parameters for moving an issue to a new parent or to top-level"
+})
+
+export type MoveIssueParams = Schema.Schema.Type<typeof MoveIssueParamsSchema>
+
 export const listIssuesParamsJsonSchema = JSONSchema.make(ListIssuesParamsSchema)
 export const getIssueParamsJsonSchema = JSONSchema.make(GetIssueParamsSchema)
 export const createIssueParamsJsonSchema = JSONSchema.make(CreateIssueParamsSchema)
@@ -267,6 +291,7 @@ export const updateIssueParamsJsonSchema = JSONSchema.make(UpdateIssueParamsSche
 export const addLabelParamsJsonSchema = JSONSchema.make(AddLabelParamsSchema)
 export const removeLabelParamsJsonSchema = JSONSchema.make(RemoveLabelParamsSchema)
 export const deleteIssueParamsJsonSchema = JSONSchema.make(DeleteIssueParamsSchema)
+export const moveIssueParamsJsonSchema = JSONSchema.make(MoveIssueParamsSchema)
 
 export const parseIssue = Schema.decodeUnknown(IssueSchema)
 export const parseIssueSummary = Schema.decodeUnknown(IssueSummarySchema)
@@ -277,6 +302,7 @@ export const parseUpdateIssueParams = Schema.decodeUnknown(UpdateIssueParamsSche
 export const parseAddLabelParams = Schema.decodeUnknown(AddLabelParamsSchema)
 export const parseRemoveLabelParams = Schema.decodeUnknown(RemoveLabelParamsSchema)
 export const parseDeleteIssueParams = Schema.decodeUnknown(DeleteIssueParamsSchema)
+export const parseMoveIssueParams = Schema.decodeUnknown(MoveIssueParamsSchema)
 
 // No codec needed — internal type, not used for runtime validation
 export interface CreateIssueResult {
@@ -302,4 +328,10 @@ export interface RemoveLabelResult {
 export interface DeleteIssueResult {
   readonly identifier: IssueIdentifier
   readonly deleted: boolean
+}
+
+export interface MoveIssueResult {
+  readonly identifier: IssueIdentifier
+  readonly moved: boolean
+  readonly newParent?: IssueIdentifier
 }

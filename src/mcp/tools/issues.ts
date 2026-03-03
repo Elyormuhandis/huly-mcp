@@ -15,6 +15,7 @@ import {
   listIssueRelationsParamsJsonSchema,
   listIssuesParamsJsonSchema,
   listIssueTemplatesParamsJsonSchema,
+  moveIssueParamsJsonSchema,
   parseAddIssueRelationParams,
   parseAddLabelParams,
   parseCreateComponentParams,
@@ -31,6 +32,7 @@ import {
   parseListIssueRelationsParams,
   parseListIssuesParams,
   parseListIssueTemplatesParams,
+  parseMoveIssueParams,
   parseRemoveIssueRelationParams,
   parseRemoveLabelParams,
   parseSetIssueComponentParams,
@@ -60,7 +62,15 @@ import {
   listIssueTemplates,
   updateIssueTemplate
 } from "../../huly/operations/issue-templates.js"
-import { addLabel, createIssue, deleteIssue, getIssue, listIssues, updateIssue } from "../../huly/operations/issues.js"
+import {
+  addLabel,
+  createIssue,
+  deleteIssue,
+  getIssue,
+  listIssues,
+  moveIssue,
+  updateIssue
+} from "../../huly/operations/issues.js"
 import { removeIssueLabel } from "../../huly/operations/labels.js"
 import { addIssueRelation, listIssueRelations, removeIssueRelation } from "../../huly/operations/relations.js"
 import { createToolHandler, type RegisteredTool } from "./registry.js"
@@ -71,7 +81,7 @@ export const issueTools: ReadonlyArray<RegisteredTool> = [
   {
     name: "list_issues",
     description:
-      "Query Huly issues with optional filters. Returns issues sorted by modification date (newest first). Supports filtering by project, status, assignee, and milestone. Supports searching by title substring (titleSearch) and description content (descriptionSearch).",
+      "Query Huly issues with optional filters. Returns issues sorted by modification date (newest first). Supports filtering by project, status, assignee, component, and parentIssue (to list children of a specific issue). Supports searching by title substring (titleSearch) and description content (descriptionSearch).",
     category: CATEGORY,
     inputSchema: listIssuesParamsJsonSchema,
     handler: createToolHandler(
@@ -148,6 +158,18 @@ export const issueTools: ReadonlyArray<RegisteredTool> = [
       "delete_issue",
       parseDeleteIssueParams,
       deleteIssue
+    )
+  },
+  {
+    name: "move_issue",
+    description:
+      "Move an issue to a new parent (making it a sub-issue) or to top-level (null). Updates parent/child relationships and sub-issue counts.",
+    category: CATEGORY,
+    inputSchema: moveIssueParamsJsonSchema,
+    handler: createToolHandler(
+      "move_issue",
+      parseMoveIssueParams,
+      moveIssue
     )
   },
   {
