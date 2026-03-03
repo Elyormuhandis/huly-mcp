@@ -327,25 +327,13 @@ export const getIssue = (
 
     const statusName = resolveStatusName(statuses, issue.status)
 
-    type AssigneeInfo = { assigneeName: string | undefined; assigneeRef: Issue["assigneeRef"] }
-    const noAssignee: AssigneeInfo = { assigneeName: undefined, assigneeRef: undefined }
-    const issueAssignee = issue.assignee
-    const { assigneeName, assigneeRef }: AssigneeInfo = issueAssignee !== null
-      ? yield* Effect.gen(function*() {
-        const person = yield* client.findOne<Person>(
-          contact.class.Person,
-          { _id: issueAssignee }
-        )
-        if (person) {
-          const ref: Issue["assigneeRef"] = {
-            id: PersonId.make(person._id),
-            name: PersonName.make(person.name)
-          }
-          return { assigneeName: person.name, assigneeRef: ref }
-        }
-        return noAssignee
-      })
-      : noAssignee
+    const person = issue.assignee !== null
+      ? yield* client.findOne<Person>(contact.class.Person, { _id: issue.assignee })
+      : undefined
+    const assigneeName = person?.name
+    const assigneeRef: Issue["assigneeRef"] = person
+      ? { id: PersonId.make(person._id), name: PersonName.make(person.name) }
+      : undefined
 
     const description = issue.description
       ? yield* client.fetchMarkup(
@@ -448,14 +436,20 @@ export const createIssue = (
     const priority = stringToPriority(params.priority || "no-priority")
     const identifier = `${project.identifier}-${sequence}`
 
+    type ParentData = {
+      attachedTo: Ref<Doc>
+      attachedToClass: Ref<Class<Doc>>
+      collection: string
+      parents: Array<IssueParentInfo>
+    }
     const parentIssueParam = params.parentIssue
-    const { attachedTo, attachedToClass, collection, parents } = parentIssueParam !== undefined
+    const { attachedTo, attachedToClass, collection, parents }: ParentData = parentIssueParam !== undefined
       ? yield* Effect.gen(function*() {
         const parentIssue = yield* findIssueInProject(client, project, parentIssueParam)
         return {
-          attachedTo: parentIssue._id as Ref<Doc>,
-          attachedToClass: tracker.class.Issue as Ref<Class<Doc>>,
-          collection: "subIssues" as const,
+          attachedTo: parentIssue._id,
+          attachedToClass: tracker.class.Issue,
+          collection: "subIssues",
           parents: [
             ...parentIssue.parents,
             {
@@ -468,10 +462,10 @@ export const createIssue = (
         }
       })
       : {
-        attachedTo: project._id as Ref<Doc>,
-        attachedToClass: tracker.class.Project as Ref<Class<Doc>>,
-        collection: "issues" as const,
-        parents: [] as Array<IssueParentInfo>
+        attachedTo: project._id,
+        attachedToClass: tracker.class.Project,
+        collection: "issues",
+        parents: []
       }
 
     const issueData: AttachedData<HulyIssue> = {
@@ -714,15 +708,22 @@ export const moveIssue = (
 
     const oldParentIsIssue = issue.attachedToClass === tracker.class.Issue
 
+    type MoveParentData = {
+      newAttachedTo: Ref<Doc>
+      newAttachedToClass: Ref<Class<Doc>>
+      newCollection: string
+      newParents: Array<IssueParentInfo>
+      newParentIdentifier: string | undefined
+    }
     const newParentParam = params.newParent
-    const { newAttachedTo, newAttachedToClass, newCollection, newParentIdentifier, newParents } =
+    const { newAttachedTo, newAttachedToClass, newCollection, newParentIdentifier, newParents }: MoveParentData =
       newParentParam !== null
         ? yield* Effect.gen(function*() {
           const parentIssue = yield* findIssueInProject(client, project, newParentParam)
           return {
-            newAttachedTo: parentIssue._id as Ref<Doc>,
-            newAttachedToClass: tracker.class.Issue as Ref<Class<Doc>>,
-            newCollection: "subIssues" as const,
+            newAttachedTo: parentIssue._id,
+            newAttachedToClass: tracker.class.Issue,
+            newCollection: "subIssues",
             newParents: [
               ...parentIssue.parents,
               {
@@ -732,15 +733,15 @@ export const moveIssue = (
                 space: project._id
               }
             ],
-            newParentIdentifier: parentIssue.identifier as string | undefined
+            newParentIdentifier: parentIssue.identifier
           }
         })
         : {
-          newAttachedTo: project._id as Ref<Doc>,
-          newAttachedToClass: tracker.class.Project as Ref<Class<Doc>>,
-          newCollection: "issues" as const,
-          newParents: [] as Array<IssueParentInfo>,
-          newParentIdentifier: undefined as string | undefined
+          newAttachedTo: project._id,
+          newAttachedToClass: tracker.class.Project,
+          newCollection: "issues",
+          newParents: [],
+          newParentIdentifier: undefined
         }
 
     // attachedTo is typed as Ref<Issue> in DocumentUpdate<HulyIssue>, but for top-level issues

@@ -254,13 +254,9 @@ export const getChannel = (
   Effect.gen(function*() {
     const { channel, client } = yield* findChannel(params.channel)
 
-    const memberNames: Array<string> | undefined = channel.members.length > 0
+    const memberNames = channel.members.length > 0
       ? yield* Effect.gen(function*() {
-        const accountUuidToName = yield* buildAccountUuidToNameMap(
-          client,
-          channel.members
-        )
-
+        const accountUuidToName = yield* buildAccountUuidToNameMap(client, channel.members)
         return channel.members
           .map((m) => accountUuidToName.get(m))
           .filter((n): n is string => n !== undefined)

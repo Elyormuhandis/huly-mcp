@@ -164,26 +164,12 @@ export const getIssueTemplate = (
   Effect.gen(function*() {
     const { client, template } = yield* findProjectAndTemplate(params)
 
-    const templateAssignee = template.assignee
-    const assigneeName: string | undefined = templateAssignee !== null
-      ? yield* Effect.gen(function*() {
-        const person = yield* client.findOne<Person>(
-          contact.class.Person,
-          { _id: templateAssignee }
-        )
-        return person?.name
-      })
+    const assigneeName = template.assignee !== null
+      ? (yield* client.findOne<Person>(contact.class.Person, { _id: template.assignee }))?.name
       : undefined
 
-    const templateComponent = template.component
-    const componentLabel: string | undefined = templateComponent !== null
-      ? yield* Effect.gen(function*() {
-        const component = yield* client.findOne<HulyComponent>(
-          tracker.class.Component,
-          { _id: templateComponent }
-        )
-        return component?.label
-      })
+    const componentLabel = template.component !== null
+      ? (yield* client.findOne<HulyComponent>(tracker.class.Component, { _id: template.component }))?.label
       : undefined
 
     const result: IssueTemplate = {

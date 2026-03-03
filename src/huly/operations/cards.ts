@@ -325,8 +325,12 @@ export const createCard = (
       "markdown"
     )
 
+    type CardParentData = {
+      parentRef: Ref<HulyCard> | null
+      parentInfo: Array<{ _id: Ref<HulyCard>; _class: Ref<HulyMasterTag>; title: string }>
+    }
     const parentParam = params.parent
-    const { parentInfo, parentRef } = parentParam !== undefined
+    const { parentInfo, parentRef }: CardParentData = parentParam !== undefined
       ? yield* Effect.gen(function*() {
         const parentCard = yield* findByNameOrId(
           client,
@@ -341,17 +345,14 @@ export const createCard = (
           })
         }
         return {
-          parentRef: parentCard._id as Ref<HulyCard> | null,
+          parentRef: parentCard._id,
           parentInfo: [
             ...parentCard.parentInfo,
             { _id: parentCard._id, _class: parentCard._class, title: parentCard.title }
           ]
         }
       })
-      : {
-        parentRef: null as Ref<HulyCard> | null,
-        parentInfo: [] as Array<{ _id: Ref<HulyCard>; _class: Ref<HulyMasterTag>; title: string }>
-      }
+      : { parentRef: null, parentInfo: [] }
 
     const cardData: Data<HulyCard> = {
       title: params.title,

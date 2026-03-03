@@ -403,14 +403,8 @@ export const createOrganization = (
 
     if (params.members !== undefined && params.members.length > 0) {
       for (const memberRef of params.members) {
-        const personId: Ref<HulyPerson> | undefined = yield* Effect.gen(function*() {
-          const byId = yield* findPersonById(client, memberRef)
-          if (byId !== undefined) {
-            return byId._id
-          }
-          const byEmail = yield* findPersonByEmail(client, memberRef)
-          return byEmail?._id
-        })
+        const personId = (yield* findPersonById(client, memberRef))?._id
+          ?? (yield* findPersonByEmail(client, memberRef))?._id
 
         if (personId !== undefined) {
           yield* client.addCollection(

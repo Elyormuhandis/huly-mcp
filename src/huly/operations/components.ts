@@ -164,15 +164,8 @@ export const getComponent = (
   Effect.gen(function*() {
     const { client, component } = yield* findProjectAndComponent(params)
 
-    const componentLead = component.lead
-    const leadName: string | undefined = componentLead !== null
-      ? yield* Effect.gen(function*() {
-        const person = yield* client.findOne<Person>(
-          contact.class.Person,
-          { _id: componentLead }
-        )
-        return person?.name
-      })
+    const leadName = component.lead !== null
+      ? (yield* client.findOne<Person>(contact.class.Person, { _id: component.lead }))?.name
       : undefined
 
     const result: Component = {
