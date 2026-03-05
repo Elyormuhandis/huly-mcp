@@ -1,46 +1,77 @@
 import { describe, it } from "@effect/vitest"
-import { type Doc, type PersonId, type Ref, SortingOrder, type Space, toFindResult } from "@hcengineering/core"
-import { Effect } from "effect"
+import type { SearchOptions, SearchQuery, SearchResult } from "@hcengineering/core"
+import { Effect, Schema } from "effect"
 import { expect } from "vitest"
+import { type ParsedSearchResultDoc, SearchResultDocSchema } from "../../../src/domain/schemas/search.js"
 import { HulyClient, type HulyClientOperations } from "../../../src/huly/client.js"
-import { core } from "../../../src/huly/huly-plugins.js"
 import { fulltextSearch } from "../../../src/huly/operations/search.js"
 
-const asDoc = (v: unknown) => v as Doc
-const makeDoc = (overrides: { _id: string; _class: string; space?: string; modifiedOn: number }): Doc =>
-  asDoc({
-    _id: overrides._id as Ref<Doc>,
-    // eslint-disable-next-line no-restricted-syntax -- test mock requires double cast
-    _class: overrides._class as Ref<Doc> as Doc["_class"],
-    space: (overrides.space ?? "space-1") as Ref<Space>,
-    modifiedOn: overrides.modifiedOn,
-    modifiedBy: "user-1" as PersonId,
-    createdBy: "user-1" as PersonId,
-    createdOn: Date.now()
+const parseSearchResultDoc = Schema.decodeUnknownSync(SearchResultDocSchema)
+
+const makeSearchResultDoc = (overrides: {
+  _id: string
+  _class: string
+  title?: string
+  description?: string
+  score?: number
+  createdOn?: number
+}): ParsedSearchResultDoc =>
+  parseSearchResultDoc({
+    id: overrides._id,
+    doc: {
+      _id: overrides._id,
+      _class: overrides._class,
+      createdOn: overrides.createdOn
+    },
+    ...(overrides.title !== undefined && { title: overrides.title }),
+    ...(overrides.description !== undefined && { description: overrides.description }),
+    ...(overrides.score !== undefined && { score: overrides.score })
   })
 
-const createTestLayer = (docs: Array<Doc>, captureQuery?: { query?: unknown; options?: unknown }) => {
-  const findAllImpl: HulyClientOperations["findAll"] = ((_class: unknown, query: unknown, options: unknown) => {
-    if (captureQuery) {
-      captureQuery.query = query
-      captureQuery.options = options
+const createTestLayer = (
+  docs: ReadonlyArray<ParsedSearchResultDoc>,
+  total?: number,
+  captureArgs?: { query?: SearchQuery; options?: SearchOptions }
+) => {
+  // Mock simulates SDK boundary — parsed docs satisfy the schema,
+  // cast to SearchResult at the mock seam since SDK uses branded types
+  const searchFulltextImpl: HulyClientOperations["searchFulltext"] = ((
+    query: SearchQuery,
+    options: SearchOptions
+  ) => {
+    if (captureArgs) {
+      captureArgs.query = query
+      captureArgs.options = options
     }
-    return Effect.succeed(toFindResult(docs, docs.length))
-  }) as HulyClientOperations["findAll"]
+    // eslint-disable-next-line no-restricted-syntax -- mock seam: schema-parsed data to branded SDK type
+    return Effect.succeed({ docs, total: total ?? docs.length } as unknown as SearchResult)
+  }) as HulyClientOperations["searchFulltext"]
 
-  return HulyClient.testLayer({ findAll: findAllImpl })
+  return HulyClient.testLayer({ searchFulltext: searchFulltextImpl })
 }
 
 describe("fulltextSearch", () => {
-  // test-revizorro: approved
   it.effect("returns mapped results with correct fields", () =>
     Effect.gen(function*() {
       const docs = [
-        makeDoc({ _id: "doc-1", _class: "core:class:Doc", space: "space-a", modifiedOn: 2000 }),
-        makeDoc({ _id: "doc-2", _class: "tracker:class:Issue", space: "space-b", modifiedOn: 1000 })
+        makeSearchResultDoc({
+          _id: "doc-1",
+          _class: "core:class:Doc",
+          title: "First",
+          score: 10,
+          createdOn: 2000
+        }),
+        makeSearchResultDoc({
+          _id: "doc-2",
+          _class: "tracker:class:Issue",
+          title: "Second",
+          description: "desc",
+          score: 5,
+          createdOn: 1000
+        })
       ]
 
-      const testLayer = createTestLayer(docs)
+      const testLayer = createTestLayer(docs, 2)
 
       const result = yield* fulltextSearch({ query: "test" }).pipe(Effect.provide(testLayer))
 
@@ -50,66 +81,51 @@ describe("fulltextSearch", () => {
 
       expect(result.items[0].id).toBe("doc-1")
       expect(result.items[0].class).toBe("core:class:Doc")
-      expect(result.items[0].space).toBe("space-a")
-      expect(result.items[0].modifiedOn).toBe(2000)
+      expect(result.items[0].title).toBe("First")
+      expect(result.items[0].score).toBe(10)
+      expect(result.items[0].createdOn).toBe(2000)
 
       expect(result.items[1].id).toBe("doc-2")
       expect(result.items[1].class).toBe("tracker:class:Issue")
-      expect(result.items[1].space).toBe("space-b")
-      expect(result.items[1].modifiedOn).toBe(1000)
+      expect(result.items[1].title).toBe("Second")
+      expect(result.items[1].description).toBe("desc")
+      expect(result.items[1].score).toBe(5)
+      expect(result.items[1].createdOn).toBe(1000)
     }))
 
-  // test-revizorro: approved
-  it.effect("passes $search query to client.findAll", () =>
+  it.effect("passes query string to searchFulltext", () =>
     Effect.gen(function*() {
-      const captured: { query?: unknown; options?: unknown } = {}
-      const testLayer = createTestLayer([], captured)
+      const captured: { query?: SearchQuery; options?: SearchOptions } = {}
+      const testLayer = createTestLayer([], 0, captured)
 
       yield* fulltextSearch({ query: "hello world" }).pipe(Effect.provide(testLayer))
 
-      expect(captured.query).toEqual({ $search: "hello world" })
+      expect(captured.query).toEqual({ query: "hello world" })
     }))
 
-  // test-revizorro: approved
   it.effect("uses default limit of 50", () =>
     Effect.gen(function*() {
-      const captured: { query?: unknown; options?: unknown } = {}
-      const testLayer = createTestLayer([], captured)
+      const captured: { query?: SearchQuery; options?: SearchOptions } = {}
+      const testLayer = createTestLayer([], 0, captured)
 
       yield* fulltextSearch({ query: "test" }).pipe(Effect.provide(testLayer))
 
-      const opts = captured.options as { limit?: number }
-      expect(opts.limit).toBe(50)
+      expect(captured.options?.limit).toBe(50)
     }))
 
-  // test-revizorro: approved
   it.effect("enforces max limit of 200", () =>
     Effect.gen(function*() {
-      const captured: { query?: unknown; options?: unknown } = {}
-      const testLayer = createTestLayer([], captured)
+      const captured: { query?: SearchQuery; options?: SearchOptions } = {}
+      const testLayer = createTestLayer([], 0, captured)
 
       yield* fulltextSearch({ query: "test", limit: 500 }).pipe(Effect.provide(testLayer))
 
-      const opts = captured.options as { limit?: number }
-      expect(opts.limit).toBe(200)
+      expect(captured.options?.limit).toBe(200)
     }))
 
-  // test-revizorro: approved
-  it.effect("sorts by modifiedOn descending", () =>
-    Effect.gen(function*() {
-      const captured: { query?: unknown; options?: unknown } = {}
-      const testLayer = createTestLayer([], captured)
-
-      yield* fulltextSearch({ query: "test" }).pipe(Effect.provide(testLayer))
-
-      const opts = captured.options as { sort?: Record<string, number> }
-      expect(opts.sort?.modifiedOn).toBe(SortingOrder.Descending)
-    }))
-
-  // test-revizorro: approved
   it.effect("returns empty results for no matches", () =>
     Effect.gen(function*() {
-      const testLayer = createTestLayer([])
+      const testLayer = createTestLayer([], 0)
 
       const result = yield* fulltextSearch({ query: "nonexistent" }).pipe(Effect.provide(testLayer))
 
@@ -118,33 +134,18 @@ describe("fulltextSearch", () => {
       expect(result.query).toBe("nonexistent")
     }))
 
-  // test-revizorro: approved
-  it.effect("handles doc without space", () =>
+  it.effect("handles undefined total as -1", () =>
     Effect.gen(function*() {
-      const doc = makeDoc({ _id: "doc-no-space", _class: "core:class:Doc", modifiedOn: 1000 })
-      // Simulate a doc where space is falsy
-      Object.defineProperty(doc, "space", { value: "", writable: true })
+      const docs = [makeSearchResultDoc({ _id: "doc-1", _class: "core:class:Doc" })]
+      const searchFulltextImpl: HulyClientOperations["searchFulltext"] = (() => {
+        // eslint-disable-next-line no-restricted-syntax -- mock seam: schema-parsed data to branded SDK type
+        return Effect.succeed({ docs } as unknown as SearchResult)
+      }) as HulyClientOperations["searchFulltext"]
 
-      const testLayer = createTestLayer([doc])
+      const testLayer = HulyClient.testLayer({ searchFulltext: searchFulltextImpl })
 
       const result = yield* fulltextSearch({ query: "test" }).pipe(Effect.provide(testLayer))
 
-      expect(result.items[0].space).toBeUndefined()
-    }))
-
-  // test-revizorro: approved
-  it.effect("searches against core.class.Doc", () =>
-    Effect.gen(function*() {
-      let calledClass: unknown
-      const findAllImpl: HulyClientOperations["findAll"] = ((_class: unknown, _query: unknown) => {
-        calledClass = _class
-        return Effect.succeed(toFindResult([], 0))
-      }) as HulyClientOperations["findAll"]
-
-      const testLayer = HulyClient.testLayer({ findAll: findAllImpl })
-
-      yield* fulltextSearch({ query: "test" }).pipe(Effect.provide(testLayer))
-
-      expect(calledClass).toBe(core.class.Doc)
+      expect(result.total).toBe(-1)
     }))
 })

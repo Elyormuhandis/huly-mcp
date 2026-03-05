@@ -18,7 +18,8 @@ const noopHulyClient: HulyClientOperations = {
   removeDoc: () => Effect.die(new Error("not implemented")),
   uploadMarkup: () => Effect.die(new Error("not implemented")),
   fetchMarkup: () => Effect.succeed(""),
-  updateMarkup: () => Effect.die(new Error("not implemented"))
+  updateMarkup: () => Effect.die(new Error("not implemented")),
+  searchFulltext: () => Effect.die(new Error("not implemented"))
 }
 
 const noopStorageClient: HulyStorageOperations = {

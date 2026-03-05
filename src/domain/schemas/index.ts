@@ -628,6 +628,7 @@ export {
   FulltextSearchParamsSchema,
   type FulltextSearchResult,
   parseFulltextSearchParams,
+  parseSearchResult,
   type SearchResultItem
 } from "./search.js"
 

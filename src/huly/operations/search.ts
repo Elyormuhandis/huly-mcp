@@ -5,56 +5,44 @@
  *
  * @module
  */
-import type { Doc } from "@hcengineering/core"
-import { SortingOrder } from "@hcengineering/core"
 import { Effect } from "effect"
 
-import type { FulltextSearchParams, FulltextSearchResult } from "../../domain/schemas.js"
+import { type FulltextSearchParams, type FulltextSearchResult, parseSearchResult } from "../../domain/schemas.js"
 import { HulyClient, type HulyClientError } from "../client.js"
+import { HulyConnectionError } from "../errors.js"
 import { clampLimit } from "./shared.js"
 
-import { core } from "../huly-plugins.js"
-
-type FulltextSearchError = HulyClientError
-
-/**
- * Perform a fulltext search across all indexed content.
- *
- * Uses the $search query operator to search across all indexed text fields.
- * Results are sorted by relevance (modification date as proxy).
- *
- * @param params - Search parameters including query string and limit
- * @returns Array of matching documents with basic metadata
- */
 export const fulltextSearch = (
   params: FulltextSearchParams
-): Effect.Effect<FulltextSearchResult, FulltextSearchError, HulyClient> =>
+): Effect.Effect<FulltextSearchResult, HulyClientError, HulyClient> =>
   Effect.gen(function*() {
     const client = yield* HulyClient
 
     const limit = clampLimit(params.limit)
 
-    // Use $search operator for fulltext search
-    // This searches across all indexed fields
-    const results = yield* client.findAll<Doc>(
-      core.class.Doc,
-      { $search: params.query },
-      {
-        limit,
-        sort: {
-          modifiedOn: SortingOrder.Descending
-        }
-      }
+    const raw = yield* client.searchFulltext(
+      { query: params.query },
+      { limit }
     )
 
-    const total = results.total
+    const results = yield* parseSearchResult(raw).pipe(
+      Effect.mapError((parseError) =>
+        new HulyConnectionError({
+          message: `searchFulltext response failed schema validation: ${parseError.message}`,
+          cause: parseError
+        })
+      )
+    )
 
-    // Map results to a consistent format
-    const items = results.map((doc) => ({
-      id: String(doc._id),
-      class: String(doc._class),
-      space: doc.space ? String(doc.space) : undefined,
-      modifiedOn: doc.modifiedOn
+    const total = results.total ?? -1
+
+    const items = results.docs.map((doc) => ({
+      id: doc.doc._id,
+      class: doc.doc._class,
+      title: doc.title,
+      description: doc.description,
+      score: doc.score,
+      createdOn: doc.doc.createdOn
     }))
 
     return {

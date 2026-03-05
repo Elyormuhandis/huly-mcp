@@ -31,6 +31,9 @@ import {
   type FindResult,
   makeCollabId,
   type Ref,
+  type SearchOptions,
+  type SearchQuery,
+  type SearchResult,
   type Space,
   toFindResult,
   type TxOperations,
@@ -159,6 +162,11 @@ export interface HulyClientOperations {
     markup: string,
     format: MarkupFormat
   ) => Effect.Effect<void, HulyClientError>
+
+  readonly searchFulltext: (
+    query: SearchQuery,
+    options: SearchOptions
+  ) => Effect.Effect<SearchResult, HulyClientError>
 }
 
 export class HulyClient extends Context.Tag("@hulymcp/HulyClient")<
@@ -300,7 +308,13 @@ export class HulyClient extends Context.Tag("@hulymcp/HulyClient")<
                 message: `updateMarkup failed: ${String(e)}`,
                 cause: e
               })
-          })
+          }),
+
+        searchFulltext: (query, options) =>
+          withClient(
+            (client) => client.searchFulltext(query, options),
+            "searchFulltext failed"
+          )
       }
 
       return operations
@@ -336,7 +350,8 @@ export class HulyClient extends Context.Tag("@hulymcp/HulyClient")<
       removeDoc: notImplemented("removeDoc"),
       uploadMarkup: notImplemented("uploadMarkup"),
       fetchMarkup: noopFetchMarkup,
-      updateMarkup: notImplemented("updateMarkup")
+      updateMarkup: notImplemented("updateMarkup"),
+      searchFulltext: notImplemented("searchFulltext")
     }
 
     return Layer.succeed(HulyClient, { ...defaultOps, ...mockOperations })

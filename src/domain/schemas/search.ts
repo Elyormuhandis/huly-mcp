@@ -18,12 +18,40 @@ export const FulltextSearchParamsSchema = Schema.Struct({
 
 export type FulltextSearchParams = Schema.Schema.Type<typeof FulltextSearchParamsSchema>
 
-// No codec needed — internal type, not used for runtime validation
+// --- API boundary schemas for Huly SearchResult ---
+
+const SearchResultDocInner = Schema.Struct({
+  _id: Schema.String,
+  _class: Schema.String,
+  createdOn: Schema.optional(Schema.Number)
+})
+
+export const SearchResultDocSchema = Schema.Struct({
+  id: Schema.String,
+  title: Schema.optional(Schema.String),
+  description: Schema.optional(Schema.String),
+  score: Schema.optional(Schema.Number),
+  doc: SearchResultDocInner
+})
+
+export type ParsedSearchResultDoc = Schema.Schema.Type<typeof SearchResultDocSchema>
+
+const SearchResultSchema = Schema.Struct({
+  docs: Schema.Array(SearchResultDocSchema),
+  total: Schema.optional(Schema.Number)
+})
+
+export const parseSearchResult = Schema.decodeUnknown(SearchResultSchema)
+
+// --- Output types (internal, post-mapping) ---
+
 export interface SearchResultItem {
   readonly id: string
   readonly class: string
-  readonly space?: string | undefined
-  readonly modifiedOn?: number | undefined
+  readonly title?: string | undefined
+  readonly description?: string | undefined
+  readonly score?: number | undefined
+  readonly createdOn?: number | undefined
 }
 
 export interface FulltextSearchResult {
