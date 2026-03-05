@@ -2,8 +2,15 @@
 # Full integration test suite for Huly MCP server.
 # Usage: set -a && source .env.local && set +a && bash scripts/integration_test_full.sh
 # Requires: jq, node, HULY_URL/HULY_WORKSPACE/HULY_EMAIL+HULY_PASSWORD env vars
+set -o pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$SCRIPT_DIR"
+
+if ! command -v jq &>/dev/null; then
+  echo "ERROR: jq is required but not found"
+  exit 1
+fi
 
 if [ -z "$HULY_URL" ]; then
   echo "ERROR: HULY_URL not set. Run: set -a && source .env.local && set +a"
@@ -17,9 +24,11 @@ FAILED=0
 SKIPPED=0
 ERRORS=""
 
+TOOL_TIMEOUT=30
+
 call_tool() {
   local payload="$1"
-  printf '%s\n%s\n' "$INIT" "$payload" | MCP_AUTO_EXIT=true node dist/index.cjs 2>/dev/null | grep '"id":2'
+  printf '%s\n%s\n' "$INIT" "$payload" | timeout "$TOOL_TIMEOUT" env MCP_AUTO_EXIT=true node dist/index.cjs 2>/dev/null | grep '"id":2'
 }
 
 run_test() {
@@ -99,7 +108,11 @@ run_capture_only() {
   return 0
 }
 
-TMPDIR="${TMPDIR:-/tmp}"
+# Use a temp dir without spaces (TMPDIR may contain spaces which would break JSON payloads)
+TEST_TMPDIR="${TMPDIR:-/tmp}"
+if [[ "$TEST_TMPDIR" == *" "* ]]; then
+  TEST_TMPDIR="/tmp"
+fi
 
 echo "========================================="
 echo "  Full Integration Test Suite"
@@ -124,10 +137,10 @@ echo ""
 # 2. ISSUES CRUD + RELATIONS + LABELS + MOVE
 ##############################
 echo "=== 2. Issues CRUD ==="
-ISSUE_TEXT=$(run_capture "create_issue" \
-  "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"create_issue\",\"arguments\":{\"project\":\"$PROJECT\",\"title\":\"IntTest Issue\",\"description\":\"Integration test\",\"priority\":\"low\"}},\"id\":2}")
 ISSUE_ID=""
 ISSUE_OBJ_ID=""
+ISSUE_TEXT=$(run_capture "create_issue" \
+  "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"create_issue\",\"arguments\":{\"project\":\"$PROJECT\",\"title\":\"IntTest Issue\",\"description\":\"Integration test\",\"priority\":\"low\"}},\"id\":2}")
 if [ $? -eq 0 ]; then
   ISSUE_ID=$(echo "$ISSUE_TEXT" | jq -r '.identifier' 2>/dev/null)
   ISSUE_OBJ_ID=$(echo "$ISSUE_TEXT" | jq -r '.issueId' 2>/dev/null)
@@ -143,9 +156,9 @@ if [ $? -eq 0 ]; then
     "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"update_issue\",\"arguments\":{\"project\":\"$PROJECT\",\"identifier\":\"$ISSUE_ID\",\"title\":\"Updated IntTest\",\"priority\":\"high\"}},\"id\":2}"
 
   # Sub-issue + move
+  SUB_ID=""
   SUB_TEXT=$(run_capture "create_issue(sub)" \
     "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"create_issue\",\"arguments\":{\"project\":\"$PROJECT\",\"title\":\"Sub Issue\",\"parentIssue\":\"$ISSUE_ID\"}},\"id\":2}")
-  SUB_ID=""
   if [ $? -eq 0 ]; then
     SUB_ID=$(echo "$SUB_TEXT" | jq -r '.identifier' 2>/dev/null)
     echo "  => sub: $SUB_ID"
@@ -365,10 +378,7 @@ run_test "list_teamspaces" \
   '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"list_teamspaces","arguments":{}},"id":2}'
 TS_TEXT=$(run_capture_only \
   '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"list_teamspaces","arguments":{}},"id":2}')
-TS_NAME=""
-if [ $? -eq 0 ]; then
-  TS_NAME=$(echo "$TS_TEXT" | jq -r '.teamspaces[0].name // empty' 2>/dev/null)
-fi
+TS_NAME=$(echo "$TS_TEXT" | jq -r '.teamspaces[0].name // empty' 2>/dev/null)
 if [ -n "$TS_NAME" ]; then
   run_test "list_documents($TS_NAME)" \
     "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"list_documents\",\"arguments\":{\"teamspace\":\"$TS_NAME\"}},\"id\":2}"
@@ -421,48 +431,49 @@ run_test "list_channel_messages(general)" \
 run_test "list_direct_messages" \
   '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"list_direct_messages","arguments":{"limit":3}},"id":2}'
 
-# Send a channel message, then reply + reactions
-MSG_TEXT=$(run_capture "send_channel_message(general)" \
-  '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"send_channel_message","arguments":{"channel":"general","body":"IntTest msg"}},"id":2}')
-if [ $? -eq 0 ]; then
-  MSG_ID=$(echo "$MSG_TEXT" | jq -r '.id' 2>/dev/null)
-  echo "  => msg: $MSG_ID"
-
-  # Thread replies
-  REPLY_TEXT=$(run_capture "add_thread_reply($MSG_ID)" \
-    "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"add_thread_reply\",\"arguments\":{\"channel\":\"general\",\"messageId\":\"$MSG_ID\",\"body\":\"IntTest reply\"}},\"id\":2}")
-  if [ $? -eq 0 ]; then
-    REPLY_ID=$(echo "$REPLY_TEXT" | jq -r '.id' 2>/dev/null)
-    echo "  => reply: $REPLY_ID"
-    run_test "list_thread_replies($MSG_ID)" \
-      "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"list_thread_replies\",\"arguments\":{\"channel\":\"general\",\"messageId\":\"$MSG_ID\"}},\"id\":2}"
-    run_test "update_thread_reply($REPLY_ID)" \
-      "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"update_thread_reply\",\"arguments\":{\"channel\":\"general\",\"messageId\":\"$MSG_ID\",\"replyId\":\"$REPLY_ID\",\"body\":\"Updated reply\"}},\"id\":2}"
-    run_test "delete_thread_reply($REPLY_ID)" \
-      "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"delete_thread_reply\",\"arguments\":{\"channel\":\"general\",\"messageId\":\"$MSG_ID\",\"replyId\":\"$REPLY_ID\"}},\"id\":2}"
-  fi
-
-  # Reactions
-  run_test "add_reaction($MSG_ID)" \
-    "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"add_reaction\",\"arguments\":{\"messageId\":\"$MSG_ID\",\"emoji\":\"thumbsup\"}},\"id\":2}"
-  run_test "list_reactions($MSG_ID)" \
-    "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"list_reactions\",\"arguments\":{\"messageId\":\"$MSG_ID\"}},\"id\":2}"
-  run_test "remove_reaction($MSG_ID)" \
-    "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"remove_reaction\",\"arguments\":{\"messageId\":\"$MSG_ID\",\"emoji\":\"thumbsup\"}},\"id\":2}"
-
-  # Save/unsave message
-  run_test "save_message($MSG_ID)" \
-    "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"save_message\",\"arguments\":{\"messageId\":\"$MSG_ID\"}},\"id\":2}"
-  run_test "unsave_message($MSG_ID)" \
-    "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"unsave_message\",\"arguments\":{\"messageId\":\"$MSG_ID\"}},\"id\":2}"
-fi
-
-# Create/delete channel
+# Create a temp channel for message/thread/reaction tests — deleting it cleans up all messages
 CH_TEXT=$(run_capture "create_channel" \
   '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"create_channel","arguments":{"name":"inttest-chan","description":"test channel"}},"id":2}')
 if [ $? -eq 0 ]; then
   CH_ID=$(echo "$CH_TEXT" | jq -r '.id' 2>/dev/null)
   echo "  => channel: $CH_ID"
+
+  # Send a channel message, then reply + reactions
+  MSG_TEXT=$(run_capture "send_channel_message(inttest-chan)" \
+    "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"send_channel_message\",\"arguments\":{\"channel\":\"$CH_ID\",\"body\":\"IntTest msg\"}},\"id\":2}")
+  if [ $? -eq 0 ]; then
+    MSG_ID=$(echo "$MSG_TEXT" | jq -r '.id' 2>/dev/null)
+    echo "  => msg: $MSG_ID"
+
+    # Thread replies
+    REPLY_TEXT=$(run_capture "add_thread_reply($MSG_ID)" \
+      "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"add_thread_reply\",\"arguments\":{\"channel\":\"$CH_ID\",\"messageId\":\"$MSG_ID\",\"body\":\"IntTest reply\"}},\"id\":2}")
+    if [ $? -eq 0 ]; then
+      REPLY_ID=$(echo "$REPLY_TEXT" | jq -r '.id' 2>/dev/null)
+      echo "  => reply: $REPLY_ID"
+      run_test "list_thread_replies($MSG_ID)" \
+        "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"list_thread_replies\",\"arguments\":{\"channel\":\"$CH_ID\",\"messageId\":\"$MSG_ID\"}},\"id\":2}"
+      run_test "update_thread_reply($REPLY_ID)" \
+        "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"update_thread_reply\",\"arguments\":{\"channel\":\"$CH_ID\",\"messageId\":\"$MSG_ID\",\"replyId\":\"$REPLY_ID\",\"body\":\"Updated reply\"}},\"id\":2}"
+      run_test "delete_thread_reply($REPLY_ID)" \
+        "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"delete_thread_reply\",\"arguments\":{\"channel\":\"$CH_ID\",\"messageId\":\"$MSG_ID\",\"replyId\":\"$REPLY_ID\"}},\"id\":2}"
+    fi
+
+    # Reactions
+    run_test "add_reaction($MSG_ID)" \
+      "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"add_reaction\",\"arguments\":{\"messageId\":\"$MSG_ID\",\"emoji\":\"thumbsup\"}},\"id\":2}"
+    run_test "list_reactions($MSG_ID)" \
+      "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"list_reactions\",\"arguments\":{\"messageId\":\"$MSG_ID\"}},\"id\":2}"
+    run_test "remove_reaction($MSG_ID)" \
+      "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"remove_reaction\",\"arguments\":{\"messageId\":\"$MSG_ID\",\"emoji\":\"thumbsup\"}},\"id\":2}"
+
+    # Save/unsave message
+    run_test "save_message($MSG_ID)" \
+      "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"save_message\",\"arguments\":{\"messageId\":\"$MSG_ID\"}},\"id\":2}"
+    run_test "unsave_message($MSG_ID)" \
+      "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"unsave_message\",\"arguments\":{\"messageId\":\"$MSG_ID\"}},\"id\":2}"
+  fi
+
   run_test "update_channel($CH_ID)" \
     "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"update_channel\",\"arguments\":{\"channel\":\"$CH_ID\",\"description\":\"updated\"}},\"id\":2}"
   run_test "delete_channel($CH_ID)" \
@@ -660,18 +671,14 @@ if [ $? -eq 0 ]; then
   ATT_ISSUE_ID=$(echo "$ATT_ISSUE_TEXT" | jq -r '.identifier' 2>/dev/null)
   ATT_ISSUE_OBJ=$(echo "$ATT_ISSUE_TEXT" | jq -r '.issueId' 2>/dev/null)
 
-  # upload_file
-  echo "test attachment content" > "$TMPDIR/inttest_attach.txt"
-  UPLOAD_TEXT=$(run_capture "upload_file" \
-    "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"upload_file\",\"arguments\":{\"filePath\":\"$TMPDIR/inttest_attach.txt\",\"filename\":\"inttest.txt\",\"contentType\":\"text/plain\"}},\"id\":2}")
-  if [ $? -eq 0 ]; then
-    BLOB_ID=$(echo "$UPLOAD_TEXT" | jq -r '.blobId // .id // empty' 2>/dev/null)
-    echo "  => blob: $BLOB_ID"
-  fi
+  # upload_file — skipped standalone (no blob delete tool); covered via add_issue_attachment
+  skip_test "upload_file(standalone)" "no blob delete tool — would leak data"
 
-  # add_issue_attachment
+  echo "test attachment content" > "$TEST_TMPDIR/inttest_attach.txt"
+
+  # add_issue_attachment (also exercises upload internally)
   ATT_TEXT=$(run_capture "add_issue_attachment($ATT_ISSUE_ID)" \
-    "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"add_issue_attachment\",\"arguments\":{\"project\":\"$PROJECT\",\"identifier\":\"$ATT_ISSUE_ID\",\"filePath\":\"$TMPDIR/inttest_attach.txt\",\"filename\":\"test.txt\",\"contentType\":\"text/plain\"}},\"id\":2}")
+    "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"add_issue_attachment\",\"arguments\":{\"project\":\"$PROJECT\",\"identifier\":\"$ATT_ISSUE_ID\",\"filePath\":\"$TEST_TMPDIR/inttest_attach.txt\",\"filename\":\"test.txt\",\"contentType\":\"text/plain\"}},\"id\":2}")
   if [ $? -eq 0 ]; then
     ATT_ID=$(echo "$ATT_TEXT" | jq -r '.attachmentId' 2>/dev/null)
     echo "  => attachment: $ATT_ID"
@@ -684,7 +691,7 @@ if [ $? -eq 0 ]; then
     run_test "update_attachment($ATT_ID)" \
       "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"update_attachment\",\"arguments\":{\"attachmentId\":\"$ATT_ID\",\"description\":\"updated\"}},\"id\":2}"
     run_test "download_attachment($ATT_ID)" \
-      "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"download_attachment\",\"arguments\":{\"attachmentId\":\"$ATT_ID\",\"outputPath\":\"$TMPDIR/inttest_download.txt\"}},\"id\":2}"
+      "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"download_attachment\",\"arguments\":{\"attachmentId\":\"$ATT_ID\",\"outputPath\":\"$TEST_TMPDIR/inttest_download.txt\"}},\"id\":2}"
     run_test "delete_attachment($ATT_ID)" \
       "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"delete_attachment\",\"arguments\":{\"attachmentId\":\"$ATT_ID\"}},\"id\":2}"
   fi
@@ -694,7 +701,7 @@ if [ $? -eq 0 ]; then
 
   run_test "delete_issue(attachment:$ATT_ISSUE_ID)" \
     "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"delete_issue\",\"arguments\":{\"project\":\"$PROJECT\",\"identifier\":\"$ATT_ISSUE_ID\"}},\"id\":2}"
-  rm -f "$TMPDIR/inttest_attach.txt" "$TMPDIR/inttest_download.txt"
+  rm -f "$TEST_TMPDIR/inttest_attach.txt" "$TEST_TMPDIR/inttest_download.txt"
 fi
 echo ""
 
@@ -786,9 +793,17 @@ if [ -n "$TM_PROJ_ID" ]; then
               "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"delete_test_result\",\"arguments\":{\"project\":\"$TM_PROJ_ID\",\"testResult\":\"$RESID\"}},\"id\":2}"
           fi
 
-          # run_test_plan
-          run_test "run_test_plan($TPID)" \
-            "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"run_test_plan\",\"arguments\":{\"project\":\"$TM_PROJ_ID\",\"testPlan\":\"$TPID\"}},\"id\":2}"
+          # run_test_plan — creates a new test run; capture and clean up
+          RTP_TEXT=$(run_capture "run_test_plan($TPID)" \
+            "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"run_test_plan\",\"arguments\":{\"project\":\"$TM_PROJ_ID\",\"testPlan\":\"$TPID\"}},\"id\":2}")
+          if [ $? -eq 0 ]; then
+            RTP_RUN_ID=$(echo "$RTP_TEXT" | jq -r '.runId // empty' 2>/dev/null)
+            if [ -n "$RTP_RUN_ID" ]; then
+              echo "  => run_test_plan run: $RTP_RUN_ID"
+              run_test "delete_test_run(from_plan:$RTP_RUN_ID)" \
+                "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"delete_test_run\",\"arguments\":{\"project\":\"$TM_PROJ_ID\",\"testRun\":\"$RTP_RUN_ID\"}},\"id\":2}"
+            fi
+          fi
 
           run_test "delete_test_run($TRID)" \
             "{\"jsonrpc\":\"2.0\",\"method\":\"tools/call\",\"params\":{\"name\":\"delete_test_run\",\"arguments\":{\"project\":\"$TM_PROJ_ID\",\"testRun\":\"$TRID\"}},\"id\":2}"

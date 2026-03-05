@@ -34,7 +34,7 @@ Expected: JSON with `"projects": [...]`
 
 **Coverage**: 106 tool calls across 18 domains. Self-cleaning: all created entities are deleted at the end of each section. Tools that would leak data (no delete counterpart) are skipped. Run time: ~3 minutes.
 
-**Last verified**: 2026-03-04 — 106 passed, 0 failed, 31 skipped (of 137 total).
+**Last verified**: 2026-03-04 — 106 passed, 0 failed, 32 skipped (of 138 total).
 
 ### How to Run
 
@@ -60,7 +60,7 @@ The full suite tests CRUD lifecycles with cleanup for all domains:
 | 6. Labels & Tags | create/list/update/delete tag_category, create/list/update/delete label | Full CRUD for both |
 | 7. Documents | list_teamspaces, create/list/get/update/delete document | Full CRUD |
 | 8. Teamspaces | create, get, update, delete | Full CRUD |
-| 9. Channels | list, get, messages, DMs, send_message, create/update/delete channel, thread replies (add/list/update/delete), reactions (add/list/remove), save/unsave message | Full messaging lifecycle |
+| 9. Channels | list, get, messages, DMs, create channel, send_message, thread replies (add/list/update/delete), reactions (add/list/remove), save/unsave, update/delete channel | All messaging in temp channel (deleted at end) |
 | 10. Contacts | list_persons, list_employees, list_organizations, get_user_profile, create/update/delete person | CRUD (create_organization skipped — no delete tool) |
 | 11. Calendar | list events/work_slots/time_reports/recurring, create/get/update/delete event, start/stop timer | Lifecycle (create_recurring_event skipped — no delete tool) |
 | 12. Notifications | list, count, contexts, settings, get, mark_read | Read operations (+ mutation if notifications exist) |
@@ -68,24 +68,27 @@ The full suite tests CRUD lifecycles with cleanup for all domains:
 | 14. Cards | list_card_spaces, list_master_tags, list_cards | Read operations with cardSpace |
 | 15. Activity | list_mentions, list_saved_messages | Read operations |
 | 16. Workspace | get_workspace_info, list_workspace_members | Read-only (management tools skipped) |
-| 17. Attachments | upload_file, add_issue_attachment, list/get/pin/update/download/delete attachment | Full CRUD |
+| 17. Attachments | add_issue_attachment, list/get/pin/update/download/delete attachment | Full CRUD (upload_file standalone skipped — no blob delete) |
 | 18. Test Management | Full suite/case/plan/run/result lifecycle | Requires TM project in Huly UI |
 
-### Intentionally Skipped (21 fixed + up to 10 conditional)
+### Intentionally Skipped (22 fixed + up to 14 conditional)
 
-**Always skipped (21):**
+**Always skipped (22):**
 - **create/update/delete_project** (3): Would pollute workspace
 - **Workspace management** (6): list_workspaces, create/delete_workspace, get_regions, update_member_role, update_guest_settings — dangerous
 - **update_user_profile** (1): Would modify test user
 - **create_organization** (1): No delete tool — would leak data
 - **create_recurring_event, list_event_instances** (2): No delete tool — would leak data
+- **upload_file(standalone)** (1): No blob delete tool — would leak data
 - **create_work_slot** (1): Requires existing planner task (todoId)
 - **get_person** (1): Covered by create+update cycle
 - **Cards CRUD** (4): create/get/update/delete_card — requires master tag setup
 - **add_attachment, add_document_attachment** (2): Covered by add_issue_attachment
 
-**Conditionally skipped (up to 10):**
+**Conditionally skipped (up to 14):**
 - **Notification mutations** (7-9): Skipped based on whether notifications exist at test time
+- **Event get/update/delete** (3): Skipped if create_event returns no eventId
+- **Documents** (1): Skipped if no teamspace found
 - **test_management** (1): Skipped if no TM project exists in workspace
 
 ### Response Field Reference
@@ -101,7 +104,7 @@ Key response fields used by the test script for entity IDs:
 | create_event | `.eventId` |
 | add_comment | `.commentId` |
 | add_issue_attachment | `.attachmentId` |
-| upload_file | `.blobId` |
+| run_test_plan | `.runId` |
 | create_label | `.id` |
 | create_tag_category | `.id` |
 | create_person | `.id` |
