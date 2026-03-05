@@ -210,7 +210,7 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npx -y @firfi/huly-m
 | `list_documents` | List documents in a Huly teamspace. Returns documents sorted by modification date (newest first). Supports searching by title substring (titleSearch) and content (contentSearch). |
 | `get_document` | Retrieve full details for a Huly document including markdown content. Use this to view document content and metadata. |
 | `create_document` | Create a new document in a Huly teamspace. Content supports markdown formatting. Returns the created document id. |
-| `update_document` | Update fields on an existing Huly document. Only provided fields are modified. Content updates support markdown. |
+| `edit_document` | Edit an existing Huly document. Two content modes (mutually exclusive): (1) 'content' for full replace, (2) 'old_text' + 'new_text' for targeted search-and-replace. Multiple matches error unless replace_all is true. Empty new_text deletes matched text. Also supports renaming via 'title'. |
 | `delete_document` | Permanently delete a Huly document. This action cannot be undone. |
 
 ### Storage
