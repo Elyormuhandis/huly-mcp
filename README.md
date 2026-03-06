@@ -94,6 +94,17 @@ Add the standard config to your Windsurf MCP configuration file.
 
 </details>
 
+## Updating
+
+The `@latest` tag in the install command always fetches the newest version. Most MCP clients cache the installed package, so you need to force a re-fetch:
+
+| Client | How to update |
+|--------|--------------|
+| **Claude Code** | `claude mcp remove huly` then re-add with the install command above |
+| **Claude Desktop** | Restart the app (it runs `npx` on startup) |
+| **VS Code / Cursor** | Restart the MCP server from the command palette or reload the window |
+| **npx (manual)** | `npx -y @firfi/huly-mcp@latest` — the `-y` flag skips the cache when `@latest` resolves to a new version |
+
 ## HTTP Transport
 
 By default, the server uses stdio transport. For HTTP transport (Streamable HTTP):
