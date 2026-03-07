@@ -190,9 +190,9 @@ export const findProjectWithStatuses = (
       }
     }
 
-    // project.defaultIssueStatus was removed from the runtime model in Huly ≥0.7.x;
-    // the SDK type still declares it as required Ref<IssueStatus>.
-    // Use || (not ??) to also catch the empty string "" set by our own createProject.
+    // project.defaultIssueStatus is typed as required Ref<IssueStatus> in the SDK,
+    // but is undefined or "" at runtime when no explicit default was chosen at project creation.
+    // Use || (not ??) to catch both undefined and empty string.
     const defaultStatusId: Ref<Status> | undefined = project.defaultIssueStatus || statuses[0]?._id
 
     return { client, project, statuses, defaultStatusId }
