@@ -29,7 +29,12 @@
     "test:watch": "vitest",
     "lint": "eslint src test --ext .ts && jscpd src",
     "lint:fix": "eslint src test --ext .ts --fix",
+    "format": "eslint src test --ext .ts --fix --rule '@effect/dprint: error'",
+    "check-format": "eslint src test --ext .ts --rule '@effect/dprint: error'",
+    "check-all": "pnpm build && pnpm typecheck && pnpm lint && pnpm test",
     "circular": "madge --extensions ts --circular src",
+    "local-release": "changeset version && changeset publish",
+    "prepublishOnly": "pnpm check-all",
     "update-readme": "tsx scripts/update-readme-tools.ts"
   },
   "bin": {
@@ -47,7 +52,7 @@
     "llm"
   ],
   "packageManager": "pnpm@10.29.3",
-  "author": "",
+  "author": "dearlordylord",
   "license": "MIT",
   "dependencies": {
     "@effect/platform": "^0.94.2",
@@ -91,6 +96,7 @@
     ]
   },
   "devDependencies": {
+    "@changesets/cli": "^2.30.0",
     "@effect/eslint-plugin": "^0.3.2",
     "@effect/language-service": "^0.73.1",
     "@effect/vitest": "latest",

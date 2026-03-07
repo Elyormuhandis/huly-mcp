@@ -13,7 +13,7 @@ Use `pnpm`, not npm. Prefer package.json scripts over raw commands (e.g., `pnpm 
 ## Verification
 
 Run before considering work complete:
-1. `pnpm build && pnpm typecheck && pnpm lint && pnpm test`
+1. `pnpm check-all` (runs build, typecheck, lint, test)
 2. Integration tests against local Huly (Docker) — **required** for any new feature, major change, or pre-release. Do not defer to the user; run them yourself. See `INTEGRATION_TESTING.md` for test patterns and `CLAUDE.local.md` for credentials/setup.
 
 ## Type Safety
@@ -74,10 +74,20 @@ Before deleting a worktree or branch, always check for uncommitted changes (`git
 
 After merging a worktree branch, verify the merge commit actually landed (`git log --oneline -1`) and that CODE_SMELLS.md updates are staged — don't leave integration work uncommitted.
 
+## Formatting
+
+Formatting is handled by `@effect/dprint` via ESLint (included in `pnpm lint`).
+
+- `pnpm format` — auto-format files (dprint rules only)
+- `pnpm check-format` — check formatting without writing
+
 ## Publishing
 
-```bash
-pnpm build && pnpm version patch && pnpm publish && git push
-```
+Versioning uses [Changesets](https://github.com/changesets/changesets):
+
+1. `npx changeset` — describe changes (creates a changeset file)
+2. `pnpm local-release` — version bump + publish
+
+`prepublishOnly` runs `pnpm check-all` automatically before publish.
 
 Package: `@firfi/huly-mcp` on npm.
