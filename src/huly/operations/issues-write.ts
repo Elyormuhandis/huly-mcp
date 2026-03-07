@@ -24,13 +24,12 @@ import type { CreateIssueParams, DeleteIssueParams, UpdateIssueParams } from "..
 import type { CreateIssueResult, DeleteIssueResult, UpdateIssueResult } from "../../domain/schemas/issues.js"
 import { IssueId, IssueIdentifier } from "../../domain/schemas/shared.js"
 import type { HulyClient, HulyClientError } from "../client.js"
-import type { InvalidStatusError, IssueNotFoundError, ProjectNotFoundError } from "../errors.js"
-import { PersonNotFoundError } from "../errors.js"
+import type { IssueNotFoundError, ProjectNotFoundError } from "../errors.js"
+import { InvalidStatusError, PersonNotFoundError } from "../errors.js"
 import { tracker } from "../huly-plugins.js"
 import {
   findIssueInProject,
   findPersonByEmailOrName,
-  findProject,
   findProjectAndIssue,
   findProjectWithStatuses,
   resolveStatusByName,
@@ -97,15 +96,7 @@ export const createIssue = (
   params: CreateIssueParams
 ): Effect.Effect<CreateIssueResult, CreateIssueError, HulyClient> =>
   Effect.gen(function*() {
-    const result = params.status !== undefined
-      ? yield* findProjectWithStatuses(params.project)
-      : yield* Effect.map(findProject(params.project), ({ client, project }) => ({
-        client,
-        project,
-        statuses: []
-      }))
-
-    const { client, project, statuses } = result
+    const { client, defaultStatusId, project, statuses } = yield* findProjectWithStatuses(params.project)
 
     const issueId: Ref<HulyIssue> = generateId()
 
@@ -121,7 +112,9 @@ export const createIssue = (
 
     const statusRef: Ref<Status> = params.status !== undefined
       ? yield* resolveStatusByName(statuses, params.status, params.project)
-      : project.defaultIssueStatus
+      : defaultStatusId !== undefined
+      ? defaultStatusId
+      : yield* Effect.fail(new InvalidStatusError({ status: "(default)", project: params.project }))
 
     const assigneeRef: Ref<Person> | null = params.assignee !== undefined
       ? (yield* resolveAssignee(client, params.assignee))._id

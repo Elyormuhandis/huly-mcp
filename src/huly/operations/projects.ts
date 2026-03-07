@@ -92,9 +92,11 @@ export const getProject = (
   params: GetProjectParams
 ): Effect.Effect<Project, GetProjectError, HulyClient> =>
   Effect.gen(function*() {
-    const { project, statuses } = yield* findProjectWithStatuses(params.project)
+    const { defaultStatusId, project, statuses } = yield* findProjectWithStatuses(params.project)
 
-    const defaultStatus = statuses.find(s => s._id === project.defaultIssueStatus)
+    const defaultStatus = defaultStatusId !== undefined
+      ? statuses.find(s => s._id === defaultStatusId)
+      : undefined
 
     return yield* parseProject({
       identifier: project.identifier,

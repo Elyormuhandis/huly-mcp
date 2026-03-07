@@ -109,7 +109,12 @@ export type StatusInfo = {
 export const findProjectWithStatuses = (
   projectIdentifier: string
 ): Effect.Effect<
-  { client: HulyClient["Type"]; project: HulyProject; statuses: Array<StatusInfo> },
+  {
+    client: HulyClient["Type"]
+    project: HulyProject
+    statuses: Array<StatusInfo>
+    defaultStatusId: Ref<Status> | undefined
+  },
   ProjectNotFoundError | HulyClientError,
   HulyClient
 > =>
@@ -185,7 +190,12 @@ export const findProjectWithStatuses = (
       }
     }
 
-    return { client, project, statuses }
+    // project.defaultIssueStatus was removed from the runtime model in Huly ≥0.7.x;
+    // the SDK type still declares it as required Ref<IssueStatus>.
+    // Use || (not ??) to also catch the empty string "" set by our own createProject.
+    const defaultStatusId: Ref<Status> | undefined = project.defaultIssueStatus || statuses[0]?._id
+
+    return { client, project, statuses, defaultStatusId }
   })
 
 export const parseIssueIdentifier = (
