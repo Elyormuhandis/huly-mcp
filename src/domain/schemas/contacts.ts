@@ -41,9 +41,13 @@ export interface OrganizationSummary {
   readonly modifiedOn?: number | undefined
 }
 
-export const ListPersonsParamsSchema = Schema.Struct({
+const ListPersonsParamsBase = Schema.Struct({
   nameSearch: Schema.optional(Schema.String.annotations({
-    description: "Search persons by name substring (case-insensitive)"
+    description: "Search persons by name substring (case-insensitive). Mutually exclusive with nameRegex."
+  })),
+  nameRegex: Schema.optional(Schema.String.annotations({
+    description:
+      "Filter persons by name using a regex pattern (e.g., '^Smith'). Mutually exclusive with nameSearch. Note: regex support depends on the Huly backend; use nameSearch for broader compatibility."
   })),
   emailSearch: Schema.optional(Schema.String.annotations({
     description: "Search persons by email substring (case-insensitive)"
@@ -53,7 +57,16 @@ export const ListPersonsParamsSchema = Schema.Struct({
       description: "Maximum number of persons to return (default: 50)"
     })
   )
-}).annotations({
+})
+
+export const ListPersonsParamsSchema = ListPersonsParamsBase.pipe(
+  Schema.filter((params) => {
+    if (params.nameSearch !== undefined && params.nameRegex !== undefined) {
+      return "Cannot provide both 'nameSearch' and 'nameRegex'. Use one or the other."
+    }
+    return undefined
+  })
+).annotations({
   title: "ListPersonsParams",
   description: "Parameters for listing persons"
 })

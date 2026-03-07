@@ -106,7 +106,7 @@ export const IssueSchema = Schema.Struct({
 
 export type Issue = Schema.Schema.Type<typeof IssueSchema>
 
-export const ListIssuesParamsSchema = Schema.Struct({
+const ListIssuesParamsBase = Schema.Struct({
   project: ProjectIdentifier.annotations({
     description: "Project identifier (e.g., 'HULY')"
   }),
@@ -120,7 +120,11 @@ export const ListIssuesParamsSchema = Schema.Struct({
     description: "Filter to children of this parent issue (e.g., 'HULY-42')"
   })),
   titleSearch: Schema.optional(Schema.String.annotations({
-    description: "Search issues by title substring (case-insensitive)"
+    description: "Search issues by title substring (case-insensitive). Mutually exclusive with titleRegex."
+  })),
+  titleRegex: Schema.optional(Schema.String.annotations({
+    description:
+      "Filter issues by title using a regex pattern (e.g., '^BUG'). Mutually exclusive with titleSearch. Note: regex support depends on the Huly backend; use titleSearch for broader compatibility."
   })),
   descriptionSearch: Schema.optional(Schema.String.annotations({
     description: "Search issues by description content (fulltext search)"
@@ -128,12 +132,42 @@ export const ListIssuesParamsSchema = Schema.Struct({
   component: Schema.optional(ComponentIdentifier.annotations({
     description: "Filter by component ID or label"
   })),
+  hasAssignee: Schema.optional(Schema.Boolean.annotations({
+    description: "Filter by assignee presence. true = only assigned issues, false = only unassigned issues."
+  })),
+  hasDueDate: Schema.optional(Schema.Boolean.annotations({
+    description: "Filter by due date presence. true = only issues with a due date, false = only issues without."
+  })),
+  hasComponent: Schema.optional(Schema.Boolean.annotations({
+    description: "Filter by component presence. true = only issues with a component, false = only issues without."
+  })),
+  isTopLevel: Schema.optional(Schema.Boolean.annotations({
+    description: "When true, only return top-level issues (not sub-issues). false or omitted returns all issues."
+  })),
   limit: Schema.optional(
     LimitParam.annotations({
       description: "Maximum number of issues to return (default: 50)"
     })
   )
-}).annotations({
+})
+
+export const ListIssuesParamsSchema = ListIssuesParamsBase.pipe(
+  Schema.filter((params) => {
+    if (params.titleSearch !== undefined && params.titleRegex !== undefined) {
+      return "Cannot provide both 'titleSearch' and 'titleRegex'. Use one or the other."
+    }
+    if (params.assignee !== undefined && params.hasAssignee !== undefined) {
+      return "Cannot provide both 'assignee' and 'hasAssignee'. Use one or the other."
+    }
+    if (params.component !== undefined && params.hasComponent !== undefined) {
+      return "Cannot provide both 'component' and 'hasComponent'. Use one or the other."
+    }
+    if (params.parentIssue !== undefined && params.isTopLevel === true) {
+      return "Cannot provide both 'parentIssue' and 'isTopLevel: true'. parentIssue requests children; isTopLevel requests parentless issues."
+    }
+    return undefined
+  })
+).annotations({
   title: "ListIssuesParams",
   description: "Parameters for listing issues"
 })

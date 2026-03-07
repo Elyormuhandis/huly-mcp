@@ -49,9 +49,13 @@ export interface DirectMessageSummary {
 
 // --- List Channels Params ---
 
-export const ListChannelsParamsSchema = Schema.Struct({
+const ListChannelsParamsBase = Schema.Struct({
   nameSearch: Schema.optional(Schema.String.annotations({
-    description: "Search channels by name substring (case-insensitive)"
+    description: "Search channels by name substring (case-insensitive). Mutually exclusive with nameRegex."
+  })),
+  nameRegex: Schema.optional(Schema.String.annotations({
+    description:
+      "Filter channels by name using a regex pattern (e.g., '^dev-'). Mutually exclusive with nameSearch. Note: regex support depends on the Huly backend; use nameSearch for broader compatibility."
   })),
   topicSearch: Schema.optional(Schema.String.annotations({
     description: "Search channels by topic substring (case-insensitive)"
@@ -66,7 +70,16 @@ export const ListChannelsParamsSchema = Schema.Struct({
       description: "Include archived channels in results (default: false)"
     })
   )
-}).annotations({
+})
+
+export const ListChannelsParamsSchema = ListChannelsParamsBase.pipe(
+  Schema.filter((params) => {
+    if (params.nameSearch !== undefined && params.nameRegex !== undefined) {
+      return "Cannot provide both 'nameSearch' and 'nameRegex'. Use one or the other."
+    }
+    return undefined
+  })
+).annotations({
   title: "ListChannelsParams",
   description: "Parameters for listing channels"
 })

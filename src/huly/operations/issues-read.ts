@@ -114,6 +114,10 @@ export const listIssues = (
       query.title = { $like: `%${escapeLikeWildcards(params.titleSearch)}%` }
     }
 
+    if (params.titleRegex !== undefined && params.titleRegex.trim() !== "") {
+      query.title = { $regex: params.titleRegex }
+    }
+
     if (params.descriptionSearch !== undefined && params.descriptionSearch.trim() !== "") {
       query.$search = params.descriptionSearch
     }
@@ -130,6 +134,28 @@ export const listIssues = (
       } else {
         return []
       }
+    }
+
+    if (params.hasAssignee === true) {
+      query.assignee = { $ne: null }
+    } else if (params.hasAssignee === false) {
+      query.assignee = null
+    }
+
+    if (params.hasDueDate === true) {
+      query.dueDate = { $ne: null }
+    } else if (params.hasDueDate === false) {
+      query.dueDate = null
+    }
+
+    if (params.hasComponent === true) {
+      query.component = { $ne: null }
+    } else if (params.hasComponent === false) {
+      query.component = null
+    }
+
+    if (params.isTopLevel === true) {
+      query.attachedToClass = tracker.class.Project
     }
 
     const limit = clampLimit(params.limit)

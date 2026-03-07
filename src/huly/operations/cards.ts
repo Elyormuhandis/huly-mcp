@@ -239,6 +239,10 @@ export const listCards = (
       query.title = { $like: `%${escapeLikeWildcards(params.titleSearch)}%` }
     }
 
+    if (params.titleRegex !== undefined && params.titleRegex.trim() !== "") {
+      query.title = { $regex: params.titleRegex }
+    }
+
     if (params.contentSearch !== undefined && params.contentSearch.trim() !== "") {
       query.$search = params.contentSearch
     }

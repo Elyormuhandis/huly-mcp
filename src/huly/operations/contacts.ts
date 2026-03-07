@@ -119,6 +119,10 @@ export const listPersons = (
       query.name = { $like: `%${escapeLikeWildcards(params.nameSearch)}%` }
     }
 
+    if (params.nameRegex !== undefined && params.nameRegex.trim() !== "") {
+      query.name = { $regex: params.nameRegex }
+    }
+
     if (emailSearch !== undefined && emailSearch !== "") {
       const matchingPersonIds = yield* findPersonIdsByEmail(client, emailSearch)
       if (matchingPersonIds.length === 0) {

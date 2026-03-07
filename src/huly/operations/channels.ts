@@ -214,6 +214,10 @@ export const listChannels = (
       query.name = { $like: `%${escapeLikeWildcards(params.nameSearch)}%` }
     }
 
+    if (params.nameRegex !== undefined && params.nameRegex.trim() !== "") {
+      query.name = { $regex: params.nameRegex }
+    }
+
     if (params.topicSearch !== undefined && params.topicSearch.trim() !== "") {
       query.topic = { $like: `%${escapeLikeWildcards(params.topicSearch)}%` }
     }

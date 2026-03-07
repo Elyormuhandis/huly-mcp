@@ -40,12 +40,16 @@ export interface DocumentSummary {
   readonly modifiedOn?: number | undefined
 }
 
-export const ListDocumentsParamsSchema = Schema.Struct({
+const ListDocumentsParamsBase = Schema.Struct({
   teamspace: TeamspaceIdentifier.annotations({
     description: "Teamspace name or ID"
   }),
   titleSearch: Schema.optional(Schema.String.annotations({
-    description: "Search documents by title substring (case-insensitive)"
+    description: "Search documents by title substring (case-insensitive). Mutually exclusive with titleRegex."
+  })),
+  titleRegex: Schema.optional(Schema.String.annotations({
+    description:
+      "Filter documents by title using a regex pattern (e.g., '^RFC'). Mutually exclusive with titleSearch. Note: regex support depends on the Huly backend; use titleSearch for broader compatibility."
   })),
   contentSearch: Schema.optional(Schema.String.annotations({
     description: "Search documents by content (fulltext search)"
@@ -55,7 +59,16 @@ export const ListDocumentsParamsSchema = Schema.Struct({
       description: "Maximum number of documents to return (default: 50)"
     })
   )
-}).annotations({
+})
+
+export const ListDocumentsParamsSchema = ListDocumentsParamsBase.pipe(
+  Schema.filter((params) => {
+    if (params.titleSearch !== undefined && params.titleRegex !== undefined) {
+      return "Cannot provide both 'titleSearch' and 'titleRegex'. Use one or the other."
+    }
+    return undefined
+  })
+).annotations({
   title: "ListDocumentsParams",
   description: "Parameters for listing documents in a teamspace"
 })

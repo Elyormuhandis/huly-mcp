@@ -59,7 +59,7 @@ export interface CardSummary {
   readonly modifiedOn?: number | undefined
 }
 
-export const ListCardsParamsSchema = Schema.Struct({
+const ListCardsParamsBase = Schema.Struct({
   cardSpace: CardSpaceIdentifier.annotations({
     description: "Card space name or ID"
   }),
@@ -67,7 +67,11 @@ export const ListCardsParamsSchema = Schema.Struct({
     description: "Filter by master tag (card type) name or ID"
   })),
   titleSearch: Schema.optional(Schema.String.annotations({
-    description: "Search cards by title substring (case-insensitive)"
+    description: "Search cards by title substring (case-insensitive). Mutually exclusive with titleRegex."
+  })),
+  titleRegex: Schema.optional(Schema.String.annotations({
+    description:
+      "Filter cards by title using a regex pattern (e.g., '^TODO'). Mutually exclusive with titleSearch. Note: regex support depends on the Huly backend; use titleSearch for broader compatibility."
   })),
   contentSearch: Schema.optional(Schema.String.annotations({
     description: "Search cards by content (fulltext search)"
@@ -77,7 +81,16 @@ export const ListCardsParamsSchema = Schema.Struct({
       description: "Maximum number of cards to return (default: 50)"
     })
   )
-}).annotations({
+})
+
+export const ListCardsParamsSchema = ListCardsParamsBase.pipe(
+  Schema.filter((params) => {
+    if (params.titleSearch !== undefined && params.titleRegex !== undefined) {
+      return "Cannot provide both 'titleSearch' and 'titleRegex'. Use one or the other."
+    }
+    return undefined
+  })
+).annotations({
   title: "ListCardsParams",
   description: "Parameters for listing cards in a card space"
 })
