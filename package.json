@@ -1,6 +1,6 @@
 {
   "name": "@firfi/huly-mcp",
-  "version": "0.1.60",
+  "version": "0.1.61",
   "description": "MCP server for Huly integration",
   "mcpName": "io.github.dearlordylord/huly-mcp",
   "type": "module",
@@ -80,7 +80,6 @@
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@total-typescript/ts-reset": "^0.6.1",
     "effect": "^3.19.15",
-    "fake-indexeddb": "^6.2.5",
     "posthog-node": "^5.24.11"
   },
   "lint-staged": {

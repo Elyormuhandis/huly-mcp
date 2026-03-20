@@ -1,5 +1,11 @@
 # @firfi/huly-mcp
 
+## 0.1.61
+
+### Patch Changes
+
+- Remove unnecessary browser polyfills (fake-indexeddb, window, navigator) — all @hcengineering packages guard these with typeof checks. The window mock was actively harmful, defeating browser-detection guards.
+
 ## 0.1.60
 
 ### Patch Changes
