@@ -15,64 +15,64 @@ importers:
         specifier: ^0.104.1
         version: 0.104.1(@effect/cluster@0.56.1(@effect/platform@0.94.5(effect@3.19.19))(@effect/rpc@0.73.0(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(@effect/sql@0.49.0(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(@effect/workflow@0.16.0(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(@effect/platform@0.94.5(effect@3.19.19))(@effect/rpc@0.73.0(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(effect@3.19.19))(effect@3.19.19))(@effect/platform@0.94.5(effect@3.19.19))(@effect/rpc@0.73.0(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(@effect/sql@0.49.0(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(@effect/platform@0.94.5(effect@3.19.19))(effect@3.19.19))(effect@3.19.19)
       '@hcengineering/account-client':
-        specifier: ^0.7
+        specifier: 0.7.25
         version: 0.7.25
       '@hcengineering/activity':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@hcengineering/api-client':
-        specifier: ^0.7.3
+        specifier: 0.7.19
         version: 0.7.19(prosemirror-inputrules@1.5.1)(prosemirror-model@1.25.4)(prosemirror-state@1.4.4)(prosemirror-view@1.41.6)
       '@hcengineering/attachment':
-        specifier: ^0.7
+        specifier: 0.7.0
         version: 0.7.0
       '@hcengineering/calendar':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@hcengineering/card':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@hcengineering/chunter':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@hcengineering/collaborator-client':
-        specifier: ^0.7.17
+        specifier: 0.7.18
         version: 0.7.18
       '@hcengineering/contact':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@hcengineering/core':
-        specifier: ^0.7.4
+        specifier: 0.7.26
         version: 0.7.26
       '@hcengineering/document':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@hcengineering/notification':
-        specifier: ^0.7
+        specifier: 0.7.0
         version: 0.7.0
       '@hcengineering/platform':
-        specifier: 0.7.19
-        version: 0.7.19
+        specifier: 0.7.20
+        version: 0.7.20
       '@hcengineering/rank':
-        specifier: ^0.7.3
+        specifier: 0.7.18
         version: 0.7.18
       '@hcengineering/tags':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@hcengineering/task':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@hcengineering/text':
-        specifier: ^0.7.18
+        specifier: 0.7.19
         version: 0.7.19(prosemirror-inputrules@1.5.1)(prosemirror-model@1.25.4)(prosemirror-state@1.4.4)(prosemirror-view@1.41.6)
       '@hcengineering/text-markdown':
-        specifier: ^0.7.20
+        specifier: 0.7.21
         version: 0.7.21
       '@hcengineering/time':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@hcengineering/tracker':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@modelcontextprotocol/sdk':
         specifier: ^1.27.1
@@ -616,9 +616,6 @@ packages:
 
   '@hcengineering/notification@0.7.0':
     resolution: {integrity: sha512-wO3P9XjupSV+qF5/6hqoD3tPL195RJcyC0QqGyKuH5BzZEo1EV5iUWXOHYsO4eNaNy4trj/yfX9G+6DVQudpUg==}
-
-  '@hcengineering/platform@0.7.19':
-    resolution: {integrity: sha512-HdRJ81A1p/0P9qmHUsBeyWgIkkz00a9fNdxJWjftD0zG2g1UK0212cGy1nfY3PbCefaf3PW/RqHs/oEVInl4iA==}
 
   '@hcengineering/platform@0.7.20':
     resolution: {integrity: sha512-T84Obdt408ZBmYCzK+WaQcehHO1g59NbynQk0F9Y+DnB819OfCcgTzoIhTh4aXNY39X2sJ9qhgacZ3D23nenuQ==}
@@ -4406,7 +4403,7 @@ snapshots:
     dependencies:
       '@hcengineering/contact': 0.7.0
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/preference': 0.7.0
       '@hcengineering/ui': 0.7.0
       '@hcengineering/view': 0.7.0
@@ -4439,7 +4436,7 @@ snapshots:
   '@hcengineering/attachment@0.7.0':
     dependencies:
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/preference': 0.7.0
       '@hcengineering/ui': 0.7.0
       '@hcengineering/workbench': 0.7.0
@@ -4449,7 +4446,7 @@ snapshots:
       '@hcengineering/contact': 0.7.0
       '@hcengineering/core': 0.7.26
       '@hcengineering/notification': 0.7.0
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/preference': 0.7.0
       '@hcengineering/setting': 0.7.0
       '@hcengineering/ui': 0.7.0
@@ -4457,7 +4454,7 @@ snapshots:
   '@hcengineering/card@0.7.0':
     dependencies:
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/preference': 0.7.0
       '@hcengineering/ui': 0.7.0
       '@hcengineering/view': 0.7.0
@@ -4468,7 +4465,7 @@ snapshots:
       '@hcengineering/contact': 0.7.0
       '@hcengineering/core': 0.7.26
       '@hcengineering/notification': 0.7.0
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/ui': 0.7.0
       '@hcengineering/view': 0.7.0
       '@hcengineering/workbench': 0.7.0
@@ -4496,7 +4493,7 @@ snapshots:
     dependencies:
       '@hcengineering/card': 0.7.0
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/preference': 0.7.0
       '@hcengineering/templates': 0.7.0
       '@hcengineering/ui': 0.7.0
@@ -4515,7 +4512,7 @@ snapshots:
       '@hcengineering/contact': 0.7.0
       '@hcengineering/core': 0.7.26
       '@hcengineering/notification': 0.7.0
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/preference': 0.7.0
       '@hcengineering/ui': 0.7.0
       '@hcengineering/view': 0.7.0
@@ -4527,15 +4524,11 @@ snapshots:
       '@hcengineering/activity': 0.7.0
       '@hcengineering/contact': 0.7.0
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/preference': 0.7.0
       '@hcengineering/setting': 0.7.0
       '@hcengineering/ui': 0.7.0
       '@hcengineering/view': 0.7.0
-
-  '@hcengineering/platform@0.7.19':
-    dependencies:
-      intl-messageformat: 10.7.18
 
   '@hcengineering/platform@0.7.20':
     dependencies:
@@ -4544,7 +4537,7 @@ snapshots:
   '@hcengineering/preference@0.7.0':
     dependencies:
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/ui': 0.7.0
 
   '@hcengineering/rank@0.7.18':
@@ -4562,14 +4555,14 @@ snapshots:
     dependencies:
       '@hcengineering/account-client': 0.7.25
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/templates': 0.7.0
       '@hcengineering/ui': 0.7.0
 
   '@hcengineering/tags@0.7.0':
     dependencies:
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/ui': 0.7.0
       '@hcengineering/view': 0.7.0
 
@@ -4578,7 +4571,7 @@ snapshots:
       '@hcengineering/contact': 0.7.0
       '@hcengineering/core': 0.7.26
       '@hcengineering/notification': 0.7.0
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/rank': 0.7.18
       '@hcengineering/ui': 0.7.0
       '@hcengineering/view': 0.7.0
@@ -4586,7 +4579,7 @@ snapshots:
   '@hcengineering/templates@0.7.0':
     dependencies:
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/ui': 0.7.0
 
   '@hcengineering/text-core@0.7.19':
@@ -4658,7 +4651,7 @@ snapshots:
   '@hcengineering/theme@0.7.0':
     dependencies:
       '@hcengineering/analytics': 0.7.19
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       svelte: 4.2.20
 
   '@hcengineering/time@0.7.0':
@@ -4666,7 +4659,7 @@ snapshots:
       '@hcengineering/calendar': 0.7.0
       '@hcengineering/contact': 0.7.0
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/rank': 0.7.18
       '@hcengineering/task': 0.7.0
       '@hcengineering/ui': 0.7.0
@@ -4677,7 +4670,7 @@ snapshots:
       '@hcengineering/chunter': 0.7.0
       '@hcengineering/contact': 0.7.0
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/preference': 0.7.0
       '@hcengineering/tags': 0.7.0
       '@hcengineering/task': 0.7.0
@@ -4690,7 +4683,7 @@ snapshots:
     dependencies:
       '@hcengineering/analytics': 0.7.19
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/theme': 0.7.0
       autolinker: 4.0.0
       blurhash: 2.0.5
@@ -4706,7 +4699,7 @@ snapshots:
   '@hcengineering/view@0.7.0':
     dependencies:
       '@hcengineering/core': 0.7.26
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/preference': 0.7.0
       '@hcengineering/ui': 0.7.0
 
@@ -4714,7 +4707,7 @@ snapshots:
     dependencies:
       '@hcengineering/core': 0.7.26
       '@hcengineering/notification': 0.7.0
-      '@hcengineering/platform': 0.7.19
+      '@hcengineering/platform': 0.7.20
       '@hcengineering/preference': 0.7.0
       '@hcengineering/ui': 0.7.0
       '@hcengineering/view': 0.7.0

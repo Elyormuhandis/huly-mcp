@@ -1,5 +1,11 @@
 # @firfi/huly-mcp
 
+## 0.3.1
+
+### Patch Changes
+
+- Pin @hcengineering/\* dependencies to exact versions to avoid broken 0.7.382 release with unresolved workspace: protocol
+
 ## 0.3.0
 
 ### Minor Changes
