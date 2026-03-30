@@ -1,5 +1,11 @@
 # @firfi/huly-mcp
 
+## 0.4.0
+
+### Minor Changes
+
+- d81267c: feat: add dueDate and estimation support for issue creation and updates
+
 ## 0.3.2
 
 ### Patch Changes
