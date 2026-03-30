@@ -18,6 +18,41 @@ set -a && source .env.local && set +a
 # Required: HULY_URL, HULY_WORKSPACE, and either HULY_TOKEN or (HULY_EMAIL + HULY_PASSWORD)
 ```
 
+## Running from a Container (e.g., Claude Code sandbox)
+
+When the test environment runs inside a container but Huly runs on the host via Docker, `localhost:8087` is unreachable. Huly's `/config.json` also hardcodes `localhost` in internal URLs (`ACCOUNTS_URL`, `COLLABORATOR_URL`, etc.), so simply changing `HULY_URL` isn't enough.
+
+**Fix**: monkey-patch `fetch` to rewrite `localhost:8087` → `host.docker.internal:8087`:
+
+```bash
+cat > /tmp/patch-localhost.mjs << 'PATCH'
+const origFetch = globalThis.fetch;
+globalThis.fetch = function(url, ...args) {
+  if (typeof url === 'string') {
+    url = url.replace(/localhost:8087/g, 'host.docker.internal:8087');
+  } else if (url instanceof URL) {
+    if (url.hostname === 'localhost' && url.port === '8087') {
+      url = new URL(url.href.replace('localhost:8087', 'host.docker.internal:8087'));
+    }
+  } else if (url instanceof Request) {
+    url = new Request(url.url.replace(/localhost:8087/g, 'host.docker.internal:8087'), url);
+  }
+  return origFetch.call(this, url, ...args);
+};
+PATCH
+```
+
+Then run with:
+
+```bash
+set -a && source .env.local && set +a
+export HULY_URL=http://host.docker.internal:8087
+export NODE_OPTIONS="--import=/tmp/patch-localhost.mjs"
+bash scripts/integration_test_full.sh
+```
+
+The patch is runtime-only (env var + temp file) — it does not modify the source, bundle, or package.
+
 ## Quick Smoke Test
 
 ```bash
@@ -34,7 +69,7 @@ Expected: JSON with `"projects": [...]`
 
 **Coverage**: 106 tool calls across 18 domains. Self-cleaning: all created entities are deleted at the end of each section. Tools that would leak data (no delete counterpart) are skipped. Run time: ~3 minutes.
 
-**Last verified**: 2026-03-04 — 106 passed, 0 failed, 32 skipped (of 138 total).
+**Last verified**: 2026-03-30 — 133 passed, 0 failed, 32 skipped (of 165 total).
 
 ### How to Run
 
