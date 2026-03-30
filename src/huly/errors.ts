@@ -22,6 +22,7 @@ import { HulyAuthError, HulyConnectionError, HulyError } from "./errors-base.js"
 import { EventNotFoundError, RecurringEventNotFoundError } from "./errors-calendar.js"
 import { CardNotFoundError, CardSpaceNotFoundError, MasterTagNotFoundError } from "./errors-cards.js"
 import { InvalidPersonUuidError, PersonNotFoundError } from "./errors-contacts.js"
+import { CustomFieldNotFoundError, CustomFieldObjectNotFoundError } from "./errors-custom-fields.js"
 import {
   DocumentEmptyContentError,
   DocumentNotFoundError,
@@ -78,6 +79,8 @@ export {
   ChannelNotFoundError,
   CommentNotFoundError,
   ComponentNotFoundError,
+  CustomFieldNotFoundError,
+  CustomFieldObjectNotFoundError,
   DocumentEmptyContentError,
   DocumentNotFoundError,
   DocumentTextMultipleMatchesError,
@@ -164,6 +167,8 @@ export type HulyDomainError =
   | TestResultNotFoundError
   | TestPlanItemNotFoundError
   | ComponentNotFoundError
+  | CustomFieldNotFoundError
+  | CustomFieldObjectNotFoundError
   | IssueTemplateNotFoundError
   | TemplateChildNotFoundError
   | NotificationNotFoundError
@@ -217,6 +222,8 @@ export const HulyDomainError: Schema.Union<
     typeof TestResultNotFoundError,
     typeof TestPlanItemNotFoundError,
     typeof ComponentNotFoundError,
+    typeof CustomFieldNotFoundError,
+    typeof CustomFieldObjectNotFoundError,
     typeof IssueTemplateNotFoundError,
     typeof TemplateChildNotFoundError,
     typeof NotificationNotFoundError,
@@ -266,6 +273,8 @@ export const HulyDomainError: Schema.Union<
   TestResultNotFoundError,
   TestPlanItemNotFoundError,
   ComponentNotFoundError,
+  CustomFieldNotFoundError,
+  CustomFieldObjectNotFoundError,
   IssueTemplateNotFoundError,
   TemplateChildNotFoundError,
   NotificationNotFoundError,

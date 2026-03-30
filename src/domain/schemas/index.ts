@@ -96,6 +96,24 @@ export {
 } from "./cards.js"
 
 export {
+  type CustomFieldInfo,
+  type CustomFieldValue,
+  type GetCustomFieldValuesParams,
+  getCustomFieldValuesParamsJsonSchema,
+  GetCustomFieldValuesParamsSchema,
+  type ListCustomFieldsParams,
+  listCustomFieldsParamsJsonSchema,
+  ListCustomFieldsParamsSchema,
+  parseGetCustomFieldValuesParams,
+  parseListCustomFieldsParams,
+  parseSetCustomFieldParams,
+  type SetCustomFieldParams,
+  setCustomFieldParamsJsonSchema,
+  SetCustomFieldParamsSchema,
+  type SetCustomFieldResult
+} from "./custom-fields.js"
+
+export {
   type AddLabelParams,
   addLabelParamsJsonSchema,
   AddLabelParamsSchema,

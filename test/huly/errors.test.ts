@@ -715,6 +715,10 @@ describe("Huly Errors", () => {
               return `testplanitem:${error.identifier}`
             case "ComponentNotFoundError":
               return `component:${error.identifier}`
+            case "CustomFieldNotFoundError":
+              return `customfield:${error.identifier}`
+            case "CustomFieldObjectNotFoundError":
+              return `customfieldobj:${error.objectId}`
             case "IssueTemplateNotFoundError":
               return `template:${error.identifier}`
             case "TemplateChildNotFoundError":

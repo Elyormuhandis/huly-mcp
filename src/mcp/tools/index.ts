@@ -9,6 +9,7 @@ import { cardTools } from "./cards.js"
 import { channelTools } from "./channels.js"
 import { commentTools } from "./comments.js"
 import { contactTools } from "./contacts.js"
+import { customFieldTools } from "./custom-fields.js"
 import { deletionTools } from "./deletion.js"
 import { documentTools } from "./documents.js"
 import { issueTools } from "./issues.js"
@@ -40,6 +41,7 @@ const allTools: ReadonlyArray<RegisteredTool> = [
   ...contactTools,
   ...channelTools,
   ...cardTools,
+  ...customFieldTools,
   ...calendarTools,
   ...timeTools,
   ...searchTools,
