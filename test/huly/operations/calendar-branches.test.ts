@@ -42,9 +42,9 @@ const makeRecurringEvent = (overrides?: Partial<HulyRecurringEvent>): HulyRecurr
   originalStartTime: 1700000000000,
   timeZone: "UTC",
   modifiedBy: "user-1" as Doc["modifiedBy"],
-  modifiedOn: Date.now(),
+  modifiedOn: 0,
   createdBy: "user-1" as Doc["createdBy"],
-  createdOn: Date.now(),
+  createdOn: 0,
   ...overrides
 } as HulyRecurringEvent)
 

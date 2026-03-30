@@ -45,9 +45,9 @@ const makeProject = (overrides?: Partial<HulyProject>): HulyProject => ({
   defaultIssueStatus: "status-open" as Ref<Status>,
   defaultTimeReportDay: TimeReportDayType.CurrentWorkDay,
   modifiedBy: "user-1" as PersonId,
-  modifiedOn: Date.now(),
+  modifiedOn: 0,
   createdBy: "user-1" as PersonId,
-  createdOn: Date.now(),
+  createdOn: 0,
   ...overrides
 } as HulyProject)
 
@@ -78,9 +78,9 @@ const makeIssue = (overrides?: Partial<HulyIssue>): HulyIssue => {
     reports: 0,
     childInfo: [],
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return result
@@ -94,9 +94,9 @@ const makeStatus = (overrides?: Partial<Status>): Status => {
     ofAttribute: "tracker:attribute:IssueStatus" as Ref<Attribute<Status>>,
     name: "Open",
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return result
@@ -113,9 +113,9 @@ const makeTagElement = (overrides?: Partial<TagElement>): TagElement => {
     color: 0,
     category: tracker.category.Other,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return result

@@ -31,9 +31,9 @@ const makeProject = (overrides?: Partial<HulyProject>): HulyProject => {
     sequence: 1,
     type: "project-type-1" as Ref<ProjectType>,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return base as HulyProject
@@ -50,9 +50,9 @@ const makeTagElement = (overrides?: Partial<HulyTagElement>): HulyTagElement => 
     color: 0,
     category: tracker.category.Other,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return base as HulyTagElement
@@ -86,9 +86,9 @@ const makeIssue = (overrides?: Partial<HulyIssue>): HulyIssue => {
     reports: 0,
     childInfo: [],
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return base as HulyIssue
@@ -106,9 +106,9 @@ const makeTagReference = (overrides?: Partial<TagReference>): TagReference => {
     attachedToClass: tracker.class.Issue,
     collection: "labels",
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return base as TagReference

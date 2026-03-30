@@ -34,10 +34,10 @@ const createTestLayerWithMocks = (config: MockConfig) => {
 
     return Effect.succeed(
       config.uploadResult ?? {
-        blobId: `blob-${Date.now()}` as Ref<Blob>,
+        blobId: `blob-${0}` as Ref<Blob>,
         contentType,
         size: data.length,
-        url: `https://test.huly.io/files?workspace=test&file=blob-${Date.now()}`
+        url: `https://test.huly.io/files?workspace=test&file=blob-${0}`
       }
     )
   }

@@ -40,9 +40,9 @@ const makeTestProject = (overrides?: Partial<TestProject>): TestProject => {
     members: [],
     space: "tp-1" as Ref<Space>,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return base as TestProject
@@ -58,9 +58,9 @@ const makeTestSuite = (overrides?: Partial<TestSuite>): TestSuite => {
     // eslint-disable-next-line no-restricted-syntax -- Ref<Class<TestProject>> -> Ref<TestSuite> bridge for test factory
     parent: testManagement.class.TestProject as unknown as Ref<TestSuite>,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return base as TestSuite
@@ -81,9 +81,9 @@ const makeTestCase = (overrides?: Partial<TestCase>): TestCase => {
     status: TestCaseStatus.Draft,
     assignee: null,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return base as TestCase

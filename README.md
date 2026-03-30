@@ -147,7 +147,7 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npx -y @firfi/huly-m
 <!-- AUTO-GENERATED from src/mcp/tools/ descriptions. Do not edit manually. Run `pnpm update-readme` to regenerate. -->
 ## Available Tools
 
-**`TOOLSETS` categories:** `projects`, `issues`, `comments`, `milestones`, `documents`, `storage`, `attachments`, `contacts`, `channels`, `calendar`, `time tracking`, `search`, `activity`, `notifications`, `workspace`, `cards`, `labels`, `tag-categories`, `test-management`
+**`TOOLSETS` categories:** `projects`, `issues`, `comments`, `milestones`, `documents`, `storage`, `attachments`, `contacts`, `channels`, `calendar`, `time tracking`, `search`, `activity`, `notifications`, `workspace`, `cards`, `custom-fields`, `labels`, `tag-categories`, `test-management`
 
 ### Projects
 
@@ -368,6 +368,14 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npx -y @firfi/huly-m
 | `create_card` | Create a new card in a Huly card space. Requires a master tag (card type). Content supports markdown formatting. Returns the created card id. |
 | `update_card` | Update fields on an existing Huly card. Only provided fields are modified. Content updates support markdown. |
 | `delete_card` | Permanently delete a Huly card. This action cannot be undone. |
+
+### Custom-Fields
+
+| Tool | Description |
+|------|-------------|
+| `list_custom_fields` | List custom field definitions in the workspace. Returns fields with their labels, types, and owner class info. Custom fields are created in the Huly UI on Card types, Issue types, or other classes. Use targetClass to filter fields for a specific class. |
+| `get_custom_field_values` | Read custom field values from a document. Pass the document's ID and class (from list_cards, list_issues, etc.). Returns all custom field values found on the document with their labels and types. |
+| `set_custom_field` | Set a custom field value on a document. Requires the document ID, class, field ID (from list_custom_fields), and value. Values are auto-parsed: numbers from numeric strings, booleans from 'true'/'false', strings as-is. |
 
 ### Labels
 

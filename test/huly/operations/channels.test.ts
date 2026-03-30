@@ -53,9 +53,9 @@ const makeChannel = (overrides?: Partial<HulyChannel>): HulyChannel => {
     members: [],
     messages: 0,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return result
@@ -72,9 +72,9 @@ const makeChatMessage = (overrides?: Partial<ChatMessage>): ChatMessage => {
     message: "<p>Hello world</p>",
     attachments: 0,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return result
@@ -93,9 +93,9 @@ const makeThreadMessage = (overrides?: Partial<HulyThreadMessage>): HulyThreadMe
     objectId: "channel-1" as Ref<Doc>,
     objectClass: chunter.class.Channel,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return result
@@ -113,9 +113,9 @@ const makeDirectMessage = (overrides?: Partial<DirectMessage>): DirectMessage =>
     members: [],
     messages: 0,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return result
@@ -132,9 +132,9 @@ const makePerson = (overrides?: Partial<Person>): Person =>
     space: "space-1" as Ref<Space>,
     name: "John Doe",
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   })
 
@@ -146,9 +146,9 @@ const makeEmployee = (overrides?: Partial<HulyEmployee>): HulyEmployee =>
     name: "John Doe",
     active: true,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   })
 
@@ -165,7 +165,7 @@ const makeSocialIdentity = (overrides?: Partial<SocialIdentity>): SocialIdentity
     value: "user@example.com",
     key: "huly:user@example.com",
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     ...overrides
   }
   return result

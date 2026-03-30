@@ -26,9 +26,9 @@ const makeTagCategory = (overrides?: Partial<HulyTagCategory>): HulyTagCategory 
     tags: [],
     default: false,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return base as HulyTagCategory

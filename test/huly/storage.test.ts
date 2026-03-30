@@ -350,7 +350,7 @@ describe("readFromFilePath", () => {
   it.effect("reads existing file", () =>
     Effect.gen(function*() {
       const tmpDir = os.tmpdir()
-      const tmpFile = path.join(tmpDir, `test-read-${Date.now()}.txt`)
+      const tmpFile = path.join(tmpDir, `test-read-${0}.txt`)
       const content = "test file content"
 
       yield* Effect.tryPromise(() => fs.writeFile(tmpFile, content))
@@ -376,7 +376,7 @@ describe("readFromFilePath", () => {
   it.effect("resolves relative paths", () =>
     Effect.gen(function*() {
       const tmpDir = os.tmpdir()
-      const tmpFile = path.join(tmpDir, `test-relative-${Date.now()}.txt`)
+      const tmpFile = path.join(tmpDir, `test-relative-${0}.txt`)
       const content = "relative path test"
 
       yield* Effect.tryPromise(() => fs.writeFile(tmpFile, content))
@@ -523,7 +523,7 @@ describe("getBufferFromParams", () => {
   // test-revizorro: approved
   it.effect("reads from filePath", () =>
     Effect.gen(function*() {
-      const tmpFile = path.join(os.tmpdir(), `test-gbfp-${Date.now()}.txt`)
+      const tmpFile = path.join(os.tmpdir(), `test-gbfp-${0}.txt`)
       yield* Effect.tryPromise(() => fs.writeFile(tmpFile, "filePath content"))
 
       try {

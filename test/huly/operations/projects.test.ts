@@ -35,9 +35,9 @@ const makeProject = (overrides?: Partial<HulyProject>): HulyProject => {
     private: false,
     members: [],
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   })
   return result

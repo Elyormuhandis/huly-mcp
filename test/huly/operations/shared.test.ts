@@ -50,9 +50,9 @@ const makeProject = (overrides?: Partial<HulyProject>): HulyProject =>
     defaultIssueStatus: "status-open" as Ref<Status>,
     defaultTimeReportDay: TimeReportDayType.CurrentWorkDay,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   })
 
@@ -83,9 +83,9 @@ const makeIssue = (overrides?: Partial<HulyIssue>): HulyIssue => {
     reports: 0,
     childInfo: [],
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return result
@@ -99,9 +99,9 @@ const makeStatus = (overrides?: Partial<Status>): Status => {
     ofAttribute: "tracker:attribute:IssueStatus" as Ref<Attribute<Status>>,
     name: "Open",
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return result
@@ -114,9 +114,9 @@ const makePerson = (overrides?: Partial<Person>): Person =>
     space: "space-1" as Ref<Space>,
     name: "John Doe",
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   })
 
@@ -131,9 +131,9 @@ const makeChannel = (overrides?: Partial<Channel>): Channel => {
     provider: contact.channelProvider.Email,
     value: "john@example.com",
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return result

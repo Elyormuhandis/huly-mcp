@@ -28,9 +28,9 @@ const makeProject = (overrides?: Partial<HulyProject>): HulyProject => {
     defaultIssueStatus: "status-open" as Ref<Status>,
     defaultTimeReportDay: TimeReportDayType.CurrentWorkDay,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now()
+    createdOn: 0
   }
   return Object.assign(base, overrides) as HulyProject
 }
@@ -43,9 +43,9 @@ const makeStatus = (overrides?: Partial<Status>): Status => {
     ofAttribute: "tracker:attribute:IssueStatus" as Ref<Attribute<Status>>,
     name: "Open",
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return result

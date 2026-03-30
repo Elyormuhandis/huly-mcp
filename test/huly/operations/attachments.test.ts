@@ -46,16 +46,16 @@ const makeAttachment = (overrides?: Partial<HulyAttachment>): HulyAttachment => 
   file: "blob-1" as Ref<Blob>,
   type: "application/pdf",
   size: 1024,
-  lastModified: Date.now(),
+  lastModified: 0,
   pinned: false,
   description: "A test file",
   collection: "attachments",
   attachedTo: "parent-1" as Ref<Doc>,
   attachedToClass: "class-1" as Ref<Class<Doc>>,
   modifiedBy: "user-1" as Doc["modifiedBy"],
-  modifiedOn: Date.now(),
+  modifiedOn: 0,
   createdBy: "user-1" as Doc["createdBy"],
-  createdOn: Date.now(),
+  createdOn: 0,
   ...overrides
 } as HulyAttachment)
 
@@ -71,9 +71,9 @@ const makeProject = (overrides?: Partial<HulyProject>): HulyProject => ({
   defaultAssignee: undefined,
   defaultTimeReportDay: 0,
   modifiedBy: "user-1" as Doc["modifiedBy"],
-  modifiedOn: Date.now(),
+  modifiedOn: 0,
   createdBy: "user-1" as Doc["createdBy"],
-  createdOn: Date.now(),
+  createdOn: 0,
   archived: false,
   private: false,
   ...overrides
@@ -90,9 +90,9 @@ const makeIssue = (overrides?: Partial<HulyIssue>): HulyIssue => ({
   status: "status-1" as Ref<Doc>,
   priority: 0,
   modifiedBy: "user-1" as Doc["modifiedBy"],
-  modifiedOn: Date.now(),
+  modifiedOn: 0,
   createdBy: "user-1" as Doc["createdBy"],
-  createdOn: Date.now(),
+  createdOn: 0,
   attachedTo: "parent-1" as Ref<Doc>,
   attachedToClass: "class-1" as Ref<Class<Doc>>,
   collection: "issues",
@@ -109,9 +109,9 @@ const makeTeamspace = (overrides?: Partial<HulyTeamspace>): HulyTeamspace => ({
   archived: false,
   private: false,
   modifiedBy: "user-1" as Doc["modifiedBy"],
-  modifiedOn: Date.now(),
+  modifiedOn: 0,
   createdBy: "user-1" as Doc["createdBy"],
-  createdOn: Date.now(),
+  createdOn: 0,
   ...overrides
 } as HulyTeamspace)
 
@@ -125,9 +125,9 @@ const makeDocument = (overrides?: Partial<HulyDocument>): HulyDocument => ({
   parent: documentPlugin.ids.NoParent,
   rank: "0|aaa",
   modifiedBy: "user-1" as Ref<Doc>,
-  modifiedOn: Date.now(),
+  modifiedOn: 0,
   createdBy: "user-1" as Ref<Doc>,
-  createdOn: Date.now(),
+  createdOn: 0,
   ...overrides
 } as HulyDocument)
 
@@ -424,7 +424,7 @@ describe("addAttachment", () => {
   it.effect("uploads file via filePath (covers toFileSourceParams filePath branch)", () =>
     Effect.gen(function*() {
       const tmpDir = os.tmpdir()
-      const tmpFile = path.join(tmpDir, `hulymcp-test-${Date.now()}.txt`)
+      const tmpFile = path.join(tmpDir, `hulymcp-test-${0}.txt`)
       fs.writeFileSync(tmpFile, "file content for test")
       try {
         const captureAddCollection: MockConfig["captureAddCollection"] = {}

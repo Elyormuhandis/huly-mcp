@@ -42,9 +42,9 @@ const makeProject = (overrides?: Partial<HulyProject>): HulyProject => ({
   defaultTimeReportDay: TimeReportDayType.CurrentWorkDay,
   type: "project-type-1" as Ref<ProjectType>,
   modifiedBy: "user-1" as PersonId,
-  modifiedOn: Date.now(),
+  modifiedOn: 0,
   createdBy: "user-1" as PersonId,
-  createdOn: Date.now(),
+  createdOn: 0,
   ...overrides
 })
 
@@ -74,9 +74,9 @@ const makeIssue = (overrides?: Partial<HulyIssue>): HulyIssue => ({
   identifier: "PROJ-123",
   rank: "0|aaa",
   modifiedBy: "user-1" as PersonId,
-  modifiedOn: Date.now(),
+  modifiedOn: 0,
   createdBy: "user-1" as PersonId,
-  createdOn: Date.now(),
+  createdOn: 0,
   ...overrides
 })
 
@@ -89,9 +89,9 @@ const makeComponent = (overrides?: Partial<HulyComponent>): HulyComponent => ({
   lead: null,
   comments: 0,
   modifiedBy: "user-1" as PersonId,
-  modifiedOn: Date.now(),
+  modifiedOn: 0,
   createdBy: "user-1" as PersonId,
-  createdOn: Date.now(),
+  createdOn: 0,
   ...overrides
 })
 
@@ -102,12 +102,12 @@ const makeMilestone = (overrides?: Partial<HulyMilestone>): HulyMilestone => ({
   label: "v1.0",
   description: "",
   status: MilestoneStatus.Planned,
-  targetDate: Date.now(),
+  targetDate: 0,
   comments: 0,
   modifiedBy: "user-1" as PersonId,
-  modifiedOn: Date.now(),
+  modifiedOn: 0,
   createdBy: "user-1" as PersonId,
-  createdOn: Date.now(),
+  createdOn: 0,
   ...overrides
 })
 

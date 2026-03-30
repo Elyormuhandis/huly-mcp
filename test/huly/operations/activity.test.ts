@@ -37,7 +37,7 @@ const makeActivityMessage = (overrides?: Partial<HulyActivityMessage>): HulyActi
     attachedToClass: "tracker:class:Issue" as Ref<Class<Doc>>,
     collection: "activity",
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     isPinned: false,
     replies: 0,
     reactions: 0,
@@ -57,7 +57,7 @@ const makeReaction = (overrides?: Partial<HulyReaction>): HulyReaction => {
     emoji: ":thumbsup:",
     createBy: "user-1" as PersonId,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     ...overrides
   }
   return result
@@ -70,7 +70,7 @@ const makeSavedMessage = (overrides?: Partial<HulySavedMessage>): HulySavedMessa
     space: core.space.Workspace,
     attachedTo: "msg-1" as Ref<HulyActivityMessage>,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     ...overrides
   }
   return result
@@ -87,7 +87,7 @@ const makeMention = (overrides?: Partial<UserMentionInfo>): UserMentionInfo => {
     user: "person-1" as Ref<Person>,
     content: "Hey @user check this",
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     ...overrides
   }
   return result

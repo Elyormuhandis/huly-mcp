@@ -62,7 +62,7 @@ describe("buildSocialIdToPersonNameMap - person not found in map (channels.ts li
                 value: "orphan@example.com",
                 key: "huly:orphan@example.com",
                 modifiedBy: "user-1" as PersonId,
-                modifiedOn: Date.now()
+                modifiedOn: 0
               }])))
             }
             if (_class === contact.class.Person) {
@@ -104,7 +104,7 @@ describe("buildSocialIdToPersonNameMap - person not found in map (channels.ts li
                   value: "found@example.com",
                   key: "huly:found@example.com",
                   modifiedBy: "user-1" as PersonId,
-                  modifiedOn: Date.now()
+                  modifiedOn: 0
                 },
                 {
                   _id: "social-orphan" as PersonId,
@@ -117,7 +117,7 @@ describe("buildSocialIdToPersonNameMap - person not found in map (channels.ts li
                   value: "orphan@example.com",
                   key: "huly:orphan@example.com",
                   modifiedBy: "user-1" as PersonId,
-                  modifiedOn: Date.now()
+                  modifiedOn: 0
                 }
               ])))
             }
@@ -128,9 +128,9 @@ describe("buildSocialIdToPersonNameMap - person not found in map (channels.ts li
                 space: "space-1" as Ref<Space>,
                 name: "Found Person",
                 modifiedBy: "user-1" as PersonId,
-                modifiedOn: Date.now(),
+                modifiedOn: 0,
                 createdBy: "user-1" as PersonId,
-                createdOn: Date.now()
+                createdOn: 0
               }])))
             }
             return Effect.succeed(toFindResult([]))
@@ -160,9 +160,9 @@ describe("buildAccountUuidToNameMap - employee with undefined personUuid (channe
         members: ["account-1" as HulyAccountUuid],
         messages: 1,
         modifiedBy: "user-1" as PersonId,
-        modifiedOn: Date.now(),
+        modifiedOn: 0,
         createdBy: "user-1" as PersonId,
-        createdOn: Date.now()
+        createdOn: 0
       }
 
       const empNoUuid = asEmployee({
@@ -172,9 +172,9 @@ describe("buildAccountUuidToNameMap - employee with undefined personUuid (channe
         name: "Ghost Employee",
         personUuid: undefined,
         modifiedBy: "user-1" as PersonId,
-        modifiedOn: Date.now(),
+        modifiedOn: 0,
         createdBy: "user-1" as PersonId,
-        createdOn: Date.now()
+        createdOn: 0
       })
 
       const findAllImpl: HulyClientOperations["findAll"] = ((_class: unknown) => {
@@ -209,9 +209,9 @@ describe("buildAccountUuidToNameMap - employee with undefined personUuid (channe
         members: ["account-1" as HulyAccountUuid, "account-2" as HulyAccountUuid],
         messages: 1,
         modifiedBy: "user-1" as PersonId,
-        modifiedOn: Date.now(),
+        modifiedOn: 0,
         createdBy: "user-1" as PersonId,
-        createdOn: Date.now()
+        createdOn: 0
       }
 
       const empWithUuid = asEmployee({
@@ -221,9 +221,9 @@ describe("buildAccountUuidToNameMap - employee with undefined personUuid (channe
         name: "Alice",
         personUuid: "account-1",
         modifiedBy: "user-1" as PersonId,
-        modifiedOn: Date.now(),
+        modifiedOn: 0,
         createdBy: "user-1" as PersonId,
-        createdOn: Date.now()
+        createdOn: 0
       })
 
       const empNoUuid = asEmployee({
@@ -233,9 +233,9 @@ describe("buildAccountUuidToNameMap - employee with undefined personUuid (channe
         name: "Phantom",
         personUuid: undefined,
         modifiedBy: "user-1" as PersonId,
-        modifiedOn: Date.now(),
+        modifiedOn: 0,
         createdBy: "user-1" as PersonId,
-        createdOn: Date.now()
+        createdOn: 0
       })
 
       const findAllImpl: HulyClientOperations["findAll"] = ((_class: unknown) => {
@@ -296,9 +296,9 @@ describe("createIssueFromTemplate - person not found for template assignee (issu
       defaultIssueStatus: "status-open" as Ref<Status>,
       defaultTimeReportDay: TimeReportDayType.CurrentWorkDay,
       modifiedBy: "user-1" as PersonId,
-      modifiedOn: Date.now(),
+      modifiedOn: 0,
       createdBy: "user-1" as PersonId,
-      createdOn: Date.now(),
+      createdOn: 0,
       ...overrides
     })
 

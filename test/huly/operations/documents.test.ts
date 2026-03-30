@@ -39,9 +39,9 @@ const makeTeamspace = (overrides?: Partial<HulyTeamspace>): HulyTeamspace => ({
   archived: false,
   private: false,
   modifiedBy: "user-1" as PersonId,
-  modifiedOn: Date.now(),
+  modifiedOn: 0,
   createdBy: "user-1" as PersonId,
-  createdOn: Date.now(),
+  createdOn: 0,
   ...overrides
 } as HulyTeamspace)
 
@@ -55,9 +55,9 @@ const makeDocument = (overrides?: Partial<HulyDocument>): HulyDocument => {
     parent: documentPlugin.ids.NoParent,
     rank: "0|aaa",
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return result

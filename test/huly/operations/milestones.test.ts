@@ -38,9 +38,9 @@ const makeProject = (overrides?: Partial<HulyProject>): HulyProject => {
     sequence: 1,
     type: "project-type-1" as Ref<ProjectType>,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return base as HulyProject
@@ -57,9 +57,9 @@ const makeMilestone = (overrides?: Partial<HulyMilestone>): HulyMilestone => {
     targetDate: 1706500000000,
     comments: 0,
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return base as HulyMilestone
@@ -93,9 +93,9 @@ const makeIssue = (overrides?: Partial<HulyIssue>): HulyIssue => {
     reports: 0,
     childInfo: [],
     modifiedBy: "user-1" as PersonId,
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as PersonId,
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   }
   return base as HulyIssue

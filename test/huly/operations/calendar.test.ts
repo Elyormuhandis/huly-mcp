@@ -53,9 +53,9 @@ const makeEvent = (overrides?: Partial<HulyEvent>): HulyEvent =>
     attachedToClass: "class-1" as Ref<Class<Doc>>,
     collection: "events",
     modifiedBy: "user-1" as Doc["modifiedBy"],
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as Doc["createdBy"],
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   })
 
@@ -89,9 +89,9 @@ const makePerson = (overrides?: Partial<Person>): Person =>
     space: "space-1" as Ref<Space>,
     name: "John Doe",
     modifiedBy: "user-1" as Doc["modifiedBy"],
-    modifiedOn: Date.now(),
+    modifiedOn: 0,
     createdBy: "user-1" as Doc["createdBy"],
-    createdOn: Date.now(),
+    createdOn: 0,
     ...overrides
   })
 

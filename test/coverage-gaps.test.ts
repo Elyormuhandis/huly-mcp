@@ -228,7 +228,7 @@ describe("buildSocialIdToPersonNameMap - person resolved (channels.ts line 159)"
             value: "alice@example.com",
             key: "huly:alice@example.com",
             modifiedBy: "user-1" as PersonId,
-            modifiedOn: Date.now()
+            modifiedOn: 0
           }],
           persons: [asPerson({
             _id: "person-alice" as Ref<Person>,
@@ -236,9 +236,9 @@ describe("buildSocialIdToPersonNameMap - person resolved (channels.ts line 159)"
             space: "space-1" as Ref<Space>,
             name: "Alice Smith",
             modifiedBy: "user-1" as PersonId,
-            modifiedOn: Date.now(),
+            modifiedOn: 0,
             createdBy: "user-1" as PersonId,
-            createdOn: Date.now()
+            createdOn: 0
           })]
         })
       )
@@ -260,9 +260,9 @@ describe("channels - buildAccountUuidToNameMap emp.personUuid truthy (line 187)"
         members: ["account-1" as HulyAccountUuid, "account-2" as HulyAccountUuid],
         messages: 5,
         modifiedBy: "user-1" as PersonId,
-        modifiedOn: Date.now(),
+        modifiedOn: 0,
         createdBy: "user-1" as PersonId,
-        createdOn: Date.now()
+        createdOn: 0
       }
 
       const emp1 = asEmployee({
@@ -272,9 +272,9 @@ describe("channels - buildAccountUuidToNameMap emp.personUuid truthy (line 187)"
         name: "Alice",
         personUuid: "account-1",
         modifiedBy: "user-1" as PersonId,
-        modifiedOn: Date.now(),
+        modifiedOn: 0,
         createdBy: "user-1" as PersonId,
-        createdOn: Date.now()
+        createdOn: 0
       })
 
       const emp2 = asEmployee({
@@ -284,9 +284,9 @@ describe("channels - buildAccountUuidToNameMap emp.personUuid truthy (line 187)"
         name: "Bob",
         personUuid: "account-2",
         modifiedBy: "user-1" as PersonId,
-        modifiedOn: Date.now(),
+        modifiedOn: 0,
         createdBy: "user-1" as PersonId,
-        createdOn: Date.now()
+        createdOn: 0
       })
 
       const findAllImpl: HulyClientOperations["findAll"] = ((_class: unknown, _query: unknown) => {
@@ -340,9 +340,9 @@ describe("listTeamspaces - description || undefined branches (documents.ts line 
       archived: false,
       private: false,
       modifiedBy: "user-1" as PersonId,
-      modifiedOn: Date.now(),
+      modifiedOn: 0,
       createdBy: "user-1" as PersonId,
-      createdOn: Date.now(),
+      createdOn: 0,
       ...overrides
     })
 
@@ -386,9 +386,9 @@ describe("getIssueTemplate - assignee/component lookup false branches (issue-tem
       defaultIssueStatus: "status-open" as Ref<Status>,
       defaultTimeReportDay: TimeReportDayType.CurrentWorkDay,
       modifiedBy: "user-1" as PersonId,
-      modifiedOn: Date.now(),
+      modifiedOn: 0,
       createdBy: "user-1" as PersonId,
-      createdOn: Date.now(),
+      createdOn: 0,
       ...overrides
     })
 
@@ -639,9 +639,9 @@ describe("listChannels - includeArchived true (channels.ts line 209 true branch)
         members: [],
         messages: 0,
         modifiedBy: "user-1" as PersonId,
-        modifiedOn: Date.now(),
+        modifiedOn: 0,
         createdBy: "user-1" as PersonId,
-        createdOn: Date.now()
+        createdOn: 0
       }
 
       const activeChannel: HulyChannel = {
@@ -656,9 +656,9 @@ describe("listChannels - includeArchived true (channels.ts line 209 true branch)
         members: [],
         messages: 0,
         modifiedBy: "user-1" as PersonId,
-        modifiedOn: Date.now(),
+        modifiedOn: 0,
         createdBy: "user-1" as PersonId,
-        createdOn: Date.now()
+        createdOn: 0
       }
 
       const findAllImpl: HulyClientOperations["findAll"] = ((_class: unknown, query: unknown) => {
