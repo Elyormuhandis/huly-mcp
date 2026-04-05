@@ -183,7 +183,10 @@ export const createMilestone = (
       milestoneId
     )
 
-    if (params.description) {
+    // Milestone.description is typed as Markup (not MarkupBlobRef), so we must
+    // dual-write: the raw Markup field (above, in milestoneData) for API reads,
+    // plus the collaborative document (below) for Huly UI rendering.
+    if (params.description !== undefined && params.description.trim() !== "") {
       yield* client.uploadMarkup(
         tracker.class.Milestone,
         milestoneId,
@@ -209,6 +212,7 @@ export const updateMilestone = (
     }
 
     if (params.description !== undefined) {
+      // Dual-write: see comment in createMilestone for rationale.
       if (params.description.trim() !== "") {
         yield* client.uploadMarkup(
           tracker.class.Milestone,
