@@ -1,5 +1,12 @@
 # @firfi/huly-mcp
 
+## 0.5.1
+
+### Patch Changes
+
+- 335a5fa: Fix Markup conversion for issue templates and milestones — descriptions now render markdown formatting correctly in Huly UI. Extract shared markup conversion helpers into dedicated module.
+- 3fb294d: fix: consistent uploadMarkup guard and dual-write comment for milestone descriptions
+
 ## 0.5.0
 
 ### Minor Changes
