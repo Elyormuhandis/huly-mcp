@@ -1,5 +1,11 @@
 # @firfi/huly-mcp
 
+## 0.5.3
+
+### Patch Changes
+
+- fix: bake correct version string into published dist
+
 ## 0.5.2
 
 ### Patch Changes
