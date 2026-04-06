@@ -1,6 +1,6 @@
 {
   "name": "@firfi/huly-mcp",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "MCP server for Huly integration",
   "mcpName": "io.github.dearlordylord/huly-mcp",
   "type": "module",
@@ -34,7 +34,8 @@
     "check-all": "pnpm build && pnpm typecheck && pnpm lint && pnpm test",
     "circular": "madge --extensions ts --circular src",
     "local-release": "changeset version && changeset publish",
-    "prepublishOnly": "pnpm check-all",
+    "verify-version": "node -e \"const v=require('./package.json').version; const d=require('fs').readFileSync('dist/index.cjs','utf8'); if(!d.includes('\\\"'+v+'\\\"'))throw new Error('dist version mismatch: expected '+v)\"",
+    "prepublishOnly": "pnpm check-all && pnpm verify-version",
     "update-readme": "tsx scripts/update-readme-tools.ts"
   },
   "bin": {

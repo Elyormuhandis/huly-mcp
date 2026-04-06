@@ -1,5 +1,11 @@
 # @firfi/huly-mcp
 
+## 0.5.4
+
+### Patch Changes
+
+- chore: add pre-publish version string verification to prevent stale dist
+
 ## 0.5.3
 
 ### Patch Changes
