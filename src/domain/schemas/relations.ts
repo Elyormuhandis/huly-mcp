@@ -1,7 +1,13 @@
 import { JSONSchema, Schema } from "effect"
 
-import type { DocumentId, IssueId, ObjectClassName, TeamspaceIdentifier } from "./shared.js"
-import { IssueIdentifier, ProjectIdentifier } from "./shared.js"
+import {
+  DocumentId,
+  IssueId,
+  IssueIdentifier,
+  ObjectClassName,
+  ProjectIdentifier,
+  TeamspaceIdentifier
+} from "./shared.js"
 
 export const RelationTypeValues = ["blocks", "is-blocked-by", "relates-to"] as const
 
@@ -95,3 +101,36 @@ export interface ListIssueRelationsResult {
   readonly relations: ReadonlyArray<RelationEntry>
   readonly documents: ReadonlyArray<DocumentRelationEntry>
 }
+
+export const RelationEntryWireSchema = Schema.Struct({
+  identifier: IssueIdentifier,
+  _id: IssueId,
+  _class: ObjectClassName
+})
+
+export const DocumentRelationEntryWireSchema = Schema.Struct({
+  title: Schema.String,
+  teamspace: TeamspaceIdentifier,
+  _id: DocumentId,
+  _class: ObjectClassName
+})
+
+export const AddIssueRelationResultSchema = Schema.Struct({
+  sourceIssue: IssueIdentifier,
+  targetIssue: IssueIdentifier,
+  relationType: RelationTypeSchema,
+  added: Schema.Boolean
+})
+
+export const RemoveIssueRelationResultSchema = Schema.Struct({
+  sourceIssue: IssueIdentifier,
+  targetIssue: IssueIdentifier,
+  relationType: RelationTypeSchema,
+  removed: Schema.Boolean
+})
+
+export const ListIssueRelationsResultSchema = Schema.Struct({
+  blockedBy: Schema.Array(RelationEntryWireSchema),
+  relations: Schema.Array(RelationEntryWireSchema),
+  documents: Schema.Array(DocumentRelationEntryWireSchema)
+})

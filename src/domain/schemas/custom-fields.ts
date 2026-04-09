@@ -1,7 +1,6 @@
 import { JSONSchema, Schema } from "effect"
 
-import type { CustomFieldId, ObjectClassName } from "./shared.js"
-import { LimitParam, NonEmptyString } from "./shared.js"
+import { CustomFieldId, LimitParam, NonEmptyString, ObjectClassName } from "./shared.js"
 
 export const ListCustomFieldsParamsSchema = Schema.Struct({
   targetClass: Schema.optional(
@@ -59,6 +58,18 @@ export const SetCustomFieldParamsSchema = Schema.Struct({
 
 export type SetCustomFieldParams = Schema.Schema.Type<typeof SetCustomFieldParamsSchema>
 
+export const CustomFieldTypeNameSchema = Schema.Literal(
+  "string",
+  "number",
+  "boolean",
+  "enum",
+  "array",
+  "ref",
+  "date",
+  "markup",
+  "unknown"
+)
+
 export type CustomFieldTypeName =
   | "string"
   | "number"
@@ -94,6 +105,34 @@ export interface SetCustomFieldResult {
   readonly value: unknown
   readonly updated: boolean
 }
+
+export const CustomFieldInfoWireSchema = Schema.Struct({
+  id: CustomFieldId,
+  name: Schema.String,
+  label: Schema.String,
+  ownerClassId: ObjectClassName,
+  ownerLabel: Schema.String,
+  type: CustomFieldTypeNameSchema,
+  typeDetails: Schema.Record({ key: Schema.String, value: Schema.Unknown })
+})
+
+export const CustomFieldValueWireSchema = Schema.Struct({
+  fieldId: CustomFieldId,
+  label: Schema.String,
+  value: Schema.Unknown,
+  type: CustomFieldTypeNameSchema
+})
+
+export const SetCustomFieldResultWireSchema = Schema.Struct({
+  objectId: NonEmptyString,
+  fieldId: CustomFieldId,
+  label: Schema.String,
+  value: Schema.Unknown,
+  updated: Schema.Boolean
+})
+
+export const ListCustomFieldsResultSchema = Schema.Array(CustomFieldInfoWireSchema)
+export const GetCustomFieldValuesResultSchema = Schema.Array(CustomFieldValueWireSchema)
 
 export const listCustomFieldsParamsJsonSchema = JSONSchema.make(ListCustomFieldsParamsSchema)
 export const getCustomFieldValuesParamsJsonSchema = JSONSchema.make(GetCustomFieldValuesParamsSchema)

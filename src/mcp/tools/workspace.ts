@@ -1,9 +1,15 @@
 import {
   createWorkspaceParamsJsonSchema,
+  CreateWorkspaceResultSchema,
+  DeleteWorkspaceResultSchema,
   emptyParamsJsonSchema,
   getRegionsParamsJsonSchema,
+  GetRegionsResultSchema,
+  GetUserProfileResultSchema,
   listWorkspaceMembersParamsJsonSchema,
+  ListWorkspaceMembersResultSchema,
   listWorkspacesParamsJsonSchema,
+  ListWorkspacesResultSchema,
   parseCreateWorkspaceParams,
   parseGetRegionsParams,
   parseListWorkspaceMembersParams,
@@ -12,8 +18,12 @@ import {
   parseUpdateMemberRoleParams,
   parseUpdateUserProfileParams,
   updateGuestSettingsParamsJsonSchema,
+  UpdateGuestSettingsResultSchema,
   updateMemberRoleParamsJsonSchema,
-  updateUserProfileParamsJsonSchema
+  UpdateMemberRoleResultSchema,
+  updateUserProfileParamsJsonSchema,
+  UpdateUserProfileResultSchema,
+  WorkspaceInfoSchema
 } from "../../domain/schemas.js"
 import {
   createWorkspace,
@@ -27,7 +37,11 @@ import {
   updateMemberRole,
   updateUserProfile
 } from "../../huly/operations/workspace.js"
-import { createNoParamsWorkspaceToolHandler, createWorkspaceToolHandler, type RegisteredTool } from "./registry.js"
+import {
+  createEncodedNoParamsWorkspaceToolHandler,
+  createEncodedWorkspaceToolHandler,
+  type RegisteredTool
+} from "./registry.js"
 
 const CATEGORY = "workspace" as const
 
@@ -38,10 +52,11 @@ export const workspaceTools: ReadonlyArray<RegisteredTool> = [
       "List members in the current Huly workspace with their roles. Returns members with account IDs and roles.",
     category: CATEGORY,
     inputSchema: listWorkspaceMembersParamsJsonSchema,
-    handler: createWorkspaceToolHandler(
+    handler: createEncodedWorkspaceToolHandler(
       "list_workspace_members",
       parseListWorkspaceMembersParams,
-      listWorkspaceMembers
+      listWorkspaceMembers,
+      ListWorkspaceMembersResultSchema
     )
   },
   {
@@ -50,10 +65,11 @@ export const workspaceTools: ReadonlyArray<RegisteredTool> = [
       "Update a workspace member's role. Requires appropriate permissions. Valid roles: READONLYGUEST, DocGuest, GUEST, USER, MAINTAINER, OWNER, ADMIN.",
     category: CATEGORY,
     inputSchema: updateMemberRoleParamsJsonSchema,
-    handler: createWorkspaceToolHandler(
+    handler: createEncodedWorkspaceToolHandler(
       "update_member_role",
       parseUpdateMemberRoleParams,
-      updateMemberRole
+      updateMemberRole,
+      UpdateMemberRoleResultSchema
     )
   },
   {
@@ -61,8 +77,10 @@ export const workspaceTools: ReadonlyArray<RegisteredTool> = [
     description: "Get information about the current workspace including name, URL, region, and settings.",
     category: CATEGORY,
     inputSchema: emptyParamsJsonSchema,
-    handler: createNoParamsWorkspaceToolHandler(
-      getWorkspaceInfo
+    handler: createEncodedNoParamsWorkspaceToolHandler(
+      "get_workspace_info",
+      getWorkspaceInfo,
+      WorkspaceInfoSchema
     )
   },
   {
@@ -71,10 +89,11 @@ export const workspaceTools: ReadonlyArray<RegisteredTool> = [
       "List all workspaces accessible to the current user. Returns workspace summaries sorted by last visit.",
     category: CATEGORY,
     inputSchema: listWorkspacesParamsJsonSchema,
-    handler: createWorkspaceToolHandler(
+    handler: createEncodedWorkspaceToolHandler(
       "list_workspaces",
       parseListWorkspacesParams,
-      listWorkspaces
+      listWorkspaces,
+      ListWorkspacesResultSchema
     )
   },
   {
@@ -82,10 +101,11 @@ export const workspaceTools: ReadonlyArray<RegisteredTool> = [
     description: "Create a new Huly workspace. Returns the workspace UUID and URL. Optionally specify a region.",
     category: CATEGORY,
     inputSchema: createWorkspaceParamsJsonSchema,
-    handler: createWorkspaceToolHandler(
+    handler: createEncodedWorkspaceToolHandler(
       "create_workspace",
       parseCreateWorkspaceParams,
-      createWorkspace
+      createWorkspace,
+      CreateWorkspaceResultSchema
     )
   },
   {
@@ -93,8 +113,10 @@ export const workspaceTools: ReadonlyArray<RegisteredTool> = [
     description: "Permanently delete the current workspace. This action cannot be undone. Use with extreme caution.",
     category: CATEGORY,
     inputSchema: emptyParamsJsonSchema,
-    handler: createNoParamsWorkspaceToolHandler(
-      deleteWorkspace
+    handler: createEncodedNoParamsWorkspaceToolHandler(
+      "delete_workspace",
+      deleteWorkspace,
+      DeleteWorkspaceResultSchema
     )
   },
   {
@@ -102,8 +124,10 @@ export const workspaceTools: ReadonlyArray<RegisteredTool> = [
     description: "Get the current user's profile information including bio, location, and social links.",
     category: CATEGORY,
     inputSchema: emptyParamsJsonSchema,
-    handler: createNoParamsWorkspaceToolHandler(
-      getUserProfile
+    handler: createEncodedNoParamsWorkspaceToolHandler(
+      "get_user_profile",
+      getUserProfile,
+      GetUserProfileResultSchema
     )
   },
   {
@@ -112,10 +136,11 @@ export const workspaceTools: ReadonlyArray<RegisteredTool> = [
       "Update the current user's profile. Supports bio, city, country, website, social links, and public visibility.",
     category: CATEGORY,
     inputSchema: updateUserProfileParamsJsonSchema,
-    handler: createWorkspaceToolHandler(
+    handler: createEncodedWorkspaceToolHandler(
       "update_user_profile",
       parseUpdateUserProfileParams,
-      updateUserProfile
+      updateUserProfile,
+      UpdateUserProfileResultSchema
     )
   },
   {
@@ -123,10 +148,11 @@ export const workspaceTools: ReadonlyArray<RegisteredTool> = [
     description: "Update workspace guest settings. Control read-only guest access and guest sign-up permissions.",
     category: CATEGORY,
     inputSchema: updateGuestSettingsParamsJsonSchema,
-    handler: createWorkspaceToolHandler(
+    handler: createEncodedWorkspaceToolHandler(
       "update_guest_settings",
       parseUpdateGuestSettingsParams,
-      updateGuestSettings
+      updateGuestSettings,
+      UpdateGuestSettingsResultSchema
     )
   },
   {
@@ -134,10 +160,11 @@ export const workspaceTools: ReadonlyArray<RegisteredTool> = [
     description: "Get available regions for workspace creation. Returns region codes and display names.",
     category: CATEGORY,
     inputSchema: getRegionsParamsJsonSchema,
-    handler: createWorkspaceToolHandler(
+    handler: createEncodedWorkspaceToolHandler(
       "get_regions",
       parseGetRegionsParams,
-      getRegions
+      getRegions,
+      GetRegionsResultSchema
     )
   }
 ]

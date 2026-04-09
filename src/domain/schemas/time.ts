@@ -34,7 +34,6 @@ export interface WorkSlot {
   readonly dueDate: TimestampBrand
   readonly title?: string | undefined
 }
-
 export const LogTimeParamsSchema = Schema.Struct({
   project: ProjectIdentifier.annotations({
     description: "Project identifier (e.g., 'HULY')"
@@ -192,7 +191,6 @@ export interface DetailedTimeReport {
     readonly totalTime: number
   }>
 }
-
 export const logTimeParamsJsonSchema = JSONSchema.make(LogTimeParamsSchema)
 export const getTimeReportParamsJsonSchema = JSONSchema.make(GetTimeReportParamsSchema)
 export const listTimeSpendReportsParamsJsonSchema = JSONSchema.make(ListTimeSpendReportsParamsSchema)
@@ -231,3 +229,70 @@ export interface StopTimerResult {
   readonly stoppedAt: TimestampBrand
   readonly reportId?: TimeSpendReportId | undefined
 }
+
+export const TimeSpendReportWireSchema = Schema.Struct({
+  id: Schema.String,
+  identifier: Schema.optional(IssueIdentifier),
+  employee: Schema.optional(NonEmptyString),
+  date: Schema.optional(Schema.NullOr(Timestamp)),
+  value: Schema.Number,
+  description: Schema.String
+})
+
+export const TimeReportSummarySchema = Schema.Struct({
+  identifier: Schema.optional(IssueIdentifier),
+  totalTime: Schema.Number,
+  estimation: Schema.optional(Schema.Number.pipe(Schema.positive())),
+  remainingTime: Schema.optional(Schema.Number.pipe(Schema.positive())),
+  reports: Schema.Array(TimeSpendReportWireSchema)
+})
+
+export const WorkSlotWireSchema = Schema.Struct({
+  id: Schema.String,
+  todoId: TodoId,
+  date: Timestamp,
+  dueDate: Timestamp,
+  title: Schema.optional(Schema.String)
+})
+
+export const DetailedTimeReportSchema = Schema.Struct({
+  project: ProjectIdentifier,
+  totalTime: Schema.Number,
+  byIssue: Schema.Array(
+    Schema.Struct({
+      identifier: Schema.optional(IssueIdentifier),
+      issueTitle: Schema.String,
+      totalTime: Schema.Number,
+      reports: Schema.Array(TimeSpendReportWireSchema)
+    })
+  ),
+  byEmployee: Schema.Array(
+    Schema.Struct({
+      employeeName: Schema.optional(NonEmptyString),
+      totalTime: Schema.Number
+    })
+  )
+})
+
+export const LogTimeResultSchema = Schema.Struct({
+  reportId: Schema.String,
+  identifier: IssueIdentifier
+})
+
+export const CreateWorkSlotResultSchema = Schema.Struct({
+  slotId: Schema.String
+})
+
+export const StartTimerResultSchema = Schema.Struct({
+  identifier: IssueIdentifier,
+  startedAt: Timestamp
+})
+
+export const StopTimerResultSchema = Schema.Struct({
+  identifier: IssueIdentifier,
+  stoppedAt: Timestamp,
+  reportId: Schema.optional(Schema.String)
+})
+
+export const ListTimeSpendReportsResultSchema = Schema.Array(TimeSpendReportWireSchema)
+export const ListWorkSlotsResultSchema = Schema.Array(WorkSlotWireSchema)

@@ -1,10 +1,15 @@
 import {
   createWorkSlotParamsJsonSchema,
+  CreateWorkSlotResultSchema,
+  DetailedTimeReportSchema,
   getDetailedTimeReportParamsJsonSchema,
   getTimeReportParamsJsonSchema,
   listTimeSpendReportsParamsJsonSchema,
+  ListTimeSpendReportsResultSchema,
   listWorkSlotsParamsJsonSchema,
+  ListWorkSlotsResultSchema,
   logTimeParamsJsonSchema,
+  LogTimeResultSchema,
   parseCreateWorkSlotParams,
   parseGetDetailedTimeReportParams,
   parseGetTimeReportParams,
@@ -14,7 +19,10 @@ import {
   parseStartTimerParams,
   parseStopTimerParams,
   startTimerParamsJsonSchema,
-  stopTimerParamsJsonSchema
+  StartTimerResultSchema,
+  stopTimerParamsJsonSchema,
+  StopTimerResultSchema,
+  TimeReportSummarySchema
 } from "../../domain/schemas.js"
 import {
   createWorkSlot,
@@ -26,7 +34,7 @@ import {
   startTimer,
   stopTimer
 } from "../../huly/operations/time.js"
-import { createToolHandler, type RegisteredTool } from "./registry.js"
+import { createEncodedToolHandler, type RegisteredTool } from "./registry.js"
 
 const CATEGORY = "time tracking" as const
 
@@ -37,10 +45,11 @@ export const timeTools: ReadonlyArray<RegisteredTool> = [
       "Log time spent on a Huly issue. Records a time entry with optional description. Time value is in minutes.",
     category: CATEGORY,
     inputSchema: logTimeParamsJsonSchema,
-    handler: createToolHandler(
+    handler: createEncodedToolHandler(
       "log_time",
       parseLogTimeParams,
-      logTime
+      logTime,
+      LogTimeResultSchema
     )
   },
   {
@@ -49,10 +58,11 @@ export const timeTools: ReadonlyArray<RegisteredTool> = [
       "Get time tracking report for a specific Huly issue. Shows total time, estimation, remaining time, and all time entries.",
     category: CATEGORY,
     inputSchema: getTimeReportParamsJsonSchema,
-    handler: createToolHandler(
+    handler: createEncodedToolHandler(
       "get_time_report",
       parseGetTimeReportParams,
-      getTimeReport
+      getTimeReport,
+      TimeReportSummarySchema
     )
   },
   {
@@ -61,10 +71,11 @@ export const timeTools: ReadonlyArray<RegisteredTool> = [
       "List all time entries across issues. Supports filtering by project and date range. Returns entries sorted by date (newest first).",
     category: CATEGORY,
     inputSchema: listTimeSpendReportsParamsJsonSchema,
-    handler: createToolHandler(
+    handler: createEncodedToolHandler(
       "list_time_spend_reports",
       parseListTimeSpendReportsParams,
-      listTimeSpendReports
+      listTimeSpendReports,
+      ListTimeSpendReportsResultSchema
     )
   },
   {
@@ -73,10 +84,11 @@ export const timeTools: ReadonlyArray<RegisteredTool> = [
       "Get detailed time breakdown for a project. Shows total time grouped by issue and by employee. Supports date range filtering.",
     category: CATEGORY,
     inputSchema: getDetailedTimeReportParamsJsonSchema,
-    handler: createToolHandler(
+    handler: createEncodedToolHandler(
       "get_detailed_time_report",
       parseGetDetailedTimeReportParams,
-      getDetailedTimeReport
+      getDetailedTimeReport,
+      DetailedTimeReportSchema
     )
   },
   {
@@ -85,10 +97,11 @@ export const timeTools: ReadonlyArray<RegisteredTool> = [
       "List scheduled work slots. Shows planned time blocks attached to ToDos. Supports filtering by employee and date range.",
     category: CATEGORY,
     inputSchema: listWorkSlotsParamsJsonSchema,
-    handler: createToolHandler(
+    handler: createEncodedToolHandler(
       "list_work_slots",
       parseListWorkSlotsParams,
-      listWorkSlots
+      listWorkSlots,
+      ListWorkSlotsResultSchema
     )
   },
   {
@@ -96,10 +109,11 @@ export const timeTools: ReadonlyArray<RegisteredTool> = [
     description: "Create a scheduled work slot. Attaches a time block to a ToDo for planning purposes.",
     category: CATEGORY,
     inputSchema: createWorkSlotParamsJsonSchema,
-    handler: createToolHandler(
+    handler: createEncodedToolHandler(
       "create_work_slot",
       parseCreateWorkSlotParams,
-      createWorkSlot
+      createWorkSlot,
+      CreateWorkSlotResultSchema
     )
   },
   {
@@ -108,10 +122,11 @@ export const timeTools: ReadonlyArray<RegisteredTool> = [
       "Start a client-side timer on a Huly issue. Validates the issue exists and returns a start timestamp. Use log_time to record the elapsed time when done.",
     category: CATEGORY,
     inputSchema: startTimerParamsJsonSchema,
-    handler: createToolHandler(
+    handler: createEncodedToolHandler(
       "start_timer",
       parseStartTimerParams,
-      startTimer
+      startTimer,
+      StartTimerResultSchema
     )
   },
   {
@@ -120,10 +135,11 @@ export const timeTools: ReadonlyArray<RegisteredTool> = [
       "Stop a client-side timer on a Huly issue. Returns the stop timestamp. Calculate elapsed time from start/stop timestamps and use log_time to record it.",
     category: CATEGORY,
     inputSchema: stopTimerParamsJsonSchema,
-    handler: createToolHandler(
+    handler: createEncodedToolHandler(
       "stop_timer",
       parseStopTimerParams,
-      stopTimer
+      stopTimer,
+      StopTimerResultSchema
     )
   }
 ]

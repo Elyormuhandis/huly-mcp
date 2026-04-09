@@ -241,3 +241,79 @@ export interface UpdateGuestSettingsResult {
   readonly allowReadOnly?: boolean | undefined
   readonly allowSignUp?: boolean | undefined
 }
+
+export const WorkspaceMemberSchema = Schema.Struct({
+  personId: Schema.String,
+  role: AccountRoleSchema,
+  name: Schema.optional(NonEmptyString),
+  email: Schema.optional(NonEmptyString)
+})
+
+export const WorkspaceInfoSchema = Schema.Struct({
+  uuid: Schema.String,
+  name: NonEmptyString,
+  url: NonEmptyString,
+  region: Schema.optional(Schema.String),
+  createdOn: Schema.Number,
+  allowReadOnlyGuest: Schema.optional(Schema.Boolean),
+  allowGuestSignUp: Schema.optional(Schema.Boolean),
+  version: Schema.optional(NonEmptyString),
+  mode: Schema.optional(NonEmptyString)
+})
+
+export const WorkspaceSummarySchema = Schema.Struct({
+  uuid: Schema.String,
+  name: NonEmptyString,
+  url: NonEmptyString,
+  region: Schema.optional(Schema.String),
+  createdOn: Schema.Number,
+  lastVisit: Schema.optional(Schema.Number)
+})
+
+export const RegionInfoSchema = Schema.Struct({
+  region: Schema.String,
+  name: Schema.String
+})
+
+export const UserProfileSchema = Schema.Struct({
+  personUuid: Schema.String,
+  firstName: Schema.String,
+  lastName: Schema.String,
+  bio: Schema.optional(Schema.String),
+  city: Schema.optional(Schema.String),
+  country: Schema.optional(Schema.String),
+  website: Schema.optional(Schema.String),
+  socialLinks: Schema.optional(Schema.Record({ key: Schema.String, value: Schema.String })),
+  isPublic: Schema.Boolean
+})
+
+export const UpdateMemberRoleResultSchema = Schema.Struct({
+  accountId: Schema.String,
+  role: AccountRoleSchema,
+  updated: Schema.Boolean
+})
+
+export const CreateWorkspaceResultSchema = Schema.Struct({
+  uuid: Schema.String,
+  url: NonEmptyString,
+  name: NonEmptyString
+})
+
+export const DeleteWorkspaceResultSchema = Schema.Struct({
+  deleted: Schema.Boolean
+})
+
+export const UpdateUserProfileResultSchema = Schema.Struct({
+  updated: Schema.Boolean
+})
+
+export const UpdateGuestSettingsResultSchema = Schema.Struct({
+  updated: Schema.Boolean,
+  allowReadOnly: Schema.optional(Schema.Boolean),
+  allowSignUp: Schema.optional(Schema.Boolean)
+})
+
+export const ListWorkspaceMembersResultSchema = Schema.Array(WorkspaceMemberSchema)
+export const ListWorkspacesResultSchema = Schema.Array(WorkspaceSummarySchema)
+export const GetRegionsResultSchema = Schema.Array(RegionInfoSchema)
+export const GetUserProfileResultSchema = Schema.NullOr(UserProfileSchema)

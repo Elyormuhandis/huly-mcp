@@ -4,6 +4,7 @@ import { toFindResult } from "@hcengineering/core"
 import { Effect, Schema } from "effect"
 import { expect } from "vitest"
 
+import { IssueIdentifier } from "../../src/domain/schemas/shared.js"
 import type { HulyClientOperations } from "../../src/huly/client.js"
 import { HulyClient } from "../../src/huly/client.js"
 import { HulyError } from "../../src/huly/errors.js"
@@ -14,6 +15,7 @@ import { WorkspaceClient } from "../../src/huly/workspace-client.js"
 import { McpErrorCode } from "../../src/mcp/error-mapping.js"
 import {
   createCombinedToolHandler,
+  createEncodedToolHandler,
   createNoParamsWorkspaceToolHandler,
   createStorageToolHandler,
   createToolHandler,
@@ -117,6 +119,47 @@ describe("createToolHandler", () => {
       expect(result.isError).toBe(true)
       expect(result._meta?.errorCode).toBe(McpErrorCode.InternalError)
       expect(result.content[0].text).toContain("something broke")
+    }))
+})
+
+describe("createEncodedToolHandler", () => {
+  it.effect("encodes branded output through the provided schema", () =>
+    Effect.gen(function*() {
+      const Output = Schema.Struct({ identifier: IssueIdentifier })
+      const handler = createEncodedToolHandler(
+        "encoded_tool",
+        parse,
+        (_params: Params) =>
+          Effect.succeed({ identifier: IssueIdentifier.make("HULY-1") }).pipe(
+            Effect.tap(() => HulyClient)
+          ),
+        Output
+      )
+
+      const result = yield* Effect.promise(() => handler({ name: "world" }, noopHulyClient, noopStorageClient))
+
+      expect(result.isError).toBeUndefined()
+      expect(result.content[0].text).toBe("{\"identifier\":\"HULY-1\"}")
+    }))
+
+  it.effect("returns internal error when output encoding fails", () =>
+    Effect.gen(function*() {
+      const Output = Schema.Struct({ identifier: IssueIdentifier })
+      const handler = createEncodedToolHandler(
+        "encoded_tool",
+        parse,
+        (_params: Params) =>
+          Effect.succeed({ identifier: "" }).pipe(
+            Effect.tap(() => HulyClient)
+          ),
+        Output
+      )
+
+      const result = yield* Effect.promise(() => handler({ name: "world" }, noopHulyClient, noopStorageClient))
+
+      expect(result.isError).toBe(true)
+      expect(result._meta?.errorCode).toBe(McpErrorCode.InternalError)
+      expect(result.content[0].text).toContain("invalid output")
     }))
 })
 
