@@ -1,5 +1,11 @@
 # @firfi/huly-mcp
 
+## 0.6.1
+
+### Patch Changes
+
+- Fix local-release script to rebuild dist before publish, preventing stale version string in bundle
+
 ## 0.6.0
 
 ### Minor Changes
