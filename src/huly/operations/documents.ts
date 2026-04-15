@@ -435,6 +435,20 @@ export const createDocument = (
 
     const documentId: Ref<HulyDocument> = generateId()
 
+    // Resolve parent document if specified
+    let parentRef: Ref<HulyDocument> = documentPlugin.ids.NoParent
+    if (params.parent !== undefined && params.parent.trim() !== "") {
+      const parentDoc = yield* findByNameOrId(
+        client,
+        documentPlugin.class.Document,
+        { space: teamspace._id, title: params.parent },
+        { space: teamspace._id, _id: toRef<HulyDocument>(params.parent) }
+      )
+      if (parentDoc !== undefined) {
+        parentRef = parentDoc._id
+      }
+    }
+
     // Fetch rank of the last document to insert after
     const lastDoc = yield* client.findOne<HulyDocument>(
       documentPlugin.class.Document,
@@ -456,7 +470,7 @@ export const createDocument = (
     const documentData: Data<HulyDocument> = {
       title: params.title,
       content: contentMarkupRef,
-      parent: documentPlugin.ids.NoParent,
+      parent: parentRef,
       rank
     }
 
