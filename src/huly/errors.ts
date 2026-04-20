@@ -50,6 +50,7 @@ import {
   ThreadReplyNotFoundError
 } from "./errors-messaging.js"
 import { NotificationContextNotFoundError, NotificationNotFoundError } from "./errors-notifications.js"
+import { ProjectTypeNotFoundError, TaskTypeNotFoundError } from "./errors-task-management.js"
 import {
   TestCaseNotFoundError,
   TestPlanItemNotFoundError,
@@ -106,11 +107,13 @@ export {
   NotificationNotFoundError,
   PersonNotFoundError,
   ProjectNotFoundError,
+  ProjectTypeNotFoundError,
   ReactionNotFoundError,
   RecurringEventNotFoundError,
   SavedMessageNotFoundError,
   TagCategoryNotFoundError,
   TagNotFoundError,
+  TaskTypeNotFoundError,
   TeamspaceNotFoundError,
   TemplateChildNotFoundError,
   TestCaseNotFoundError,
@@ -176,6 +179,8 @@ export type HulyDomainError =
   | InvalidPersonUuidError
   | FileTooLargeError
   | InvalidContentTypeError
+  | ProjectTypeNotFoundError
+  | TaskTypeNotFoundError
 
 /**
  * Schema for all Huly domain errors (for serialization).
@@ -230,7 +235,9 @@ export const HulyDomainError: Schema.Union<
     typeof NotificationContextNotFoundError,
     typeof InvalidPersonUuidError,
     typeof FileTooLargeError,
-    typeof InvalidContentTypeError
+    typeof InvalidContentTypeError,
+    typeof ProjectTypeNotFoundError,
+    typeof TaskTypeNotFoundError
   ]
 > = Schema.Union(
   HulyError,
@@ -281,5 +288,7 @@ export const HulyDomainError: Schema.Union<
   NotificationContextNotFoundError,
   InvalidPersonUuidError,
   FileTooLargeError,
-  InvalidContentTypeError
+  InvalidContentTypeError,
+  ProjectTypeNotFoundError,
+  TaskTypeNotFoundError
 )

@@ -147,7 +147,7 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npx -y @firfi/huly-m
 <!-- AUTO-GENERATED from src/mcp/tools/ descriptions. Do not edit manually. Run `pnpm update-readme` to regenerate. -->
 ## Available Tools
 
-**`TOOLSETS` categories:** `projects`, `issues`, `comments`, `milestones`, `documents`, `storage`, `attachments`, `contacts`, `channels`, `calendar`, `time tracking`, `search`, `activity`, `notifications`, `workspace`, `cards`, `custom-fields`, `labels`, `tag-categories`, `test-management`
+**`TOOLSETS` categories:** `projects`, `issues`, `comments`, `milestones`, `documents`, `storage`, `attachments`, `contacts`, `channels`, `calendar`, `time tracking`, `search`, `activity`, `notifications`, `workspace`, `cards`, `custom-fields`, `labels`, `tag-categories`, `task-management`, `test-management`
 
 ### Projects
 
@@ -394,6 +394,15 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npx -y @firfi/huly-m
 | `create_tag_category` | Create a new tag/label category. Idempotent: returns existing category if one with the same label and targetClass already exists (created=false). Defaults targetClass to tracker issues. |
 | `update_tag_category` | Update a tag/label category. Accepts category ID or label name. Only provided fields are modified. |
 | `delete_tag_category` | Permanently delete a tag/label category. Accepts category ID or label name. Labels in this category will be orphaned (not deleted). This action cannot be undone. |
+
+### Task-Management
+
+| Tool | Description |
+|------|-------------|
+| `list_project_types` | List project types (workspace-level templates like 'Classic project'). A ProjectType defines the task types and statuses available to projects that inherit from it. |
+| `list_task_types` | List task types (issue types) in the workspace. Task types are children of a ProjectType and define a kind of issue (e.g., Bug, Story). Optionally filter by project type. |
+| `create_status` | Create a new issue status at the workspace level. Appends the status to the TaskType.statuses array and the ProjectType.statuses array so it shows up in all projects using that type. Defaults to the tracker's Classic project type if not specified. |
+| `create_task_type` | Create a new task type (issue type) by copying the configuration (statuses, ofClass, statusCategories) of an existing task type as template. Appends the new task type to the ProjectType.tasks array. Defaults to the tracker's Classic project type. Idempotent: returns existing task type if name matches. |
 
 ### Test-Management
 

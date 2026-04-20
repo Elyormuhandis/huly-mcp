@@ -1095,3 +1095,32 @@ export {
   UpdateTestRunParamsSchema,
   type UpdateTestRunResult
 } from "./test-management-plans.js"
+
+export {
+  type CreateStatusParams,
+  createStatusParamsJsonSchema,
+  CreateStatusParamsSchema,
+  type CreateStatusResult,
+  type CreateTaskTypeParams,
+  createTaskTypeParamsJsonSchema,
+  CreateTaskTypeParamsSchema,
+  type CreateTaskTypeResult,
+  type ListProjectTypesParams,
+  listProjectTypesParamsJsonSchema,
+  ListProjectTypesParamsSchema,
+  type ListProjectTypesResult,
+  type ListTaskTypesParams,
+  listTaskTypesParamsJsonSchema,
+  ListTaskTypesParamsSchema,
+  type ListTaskTypesResult,
+  parseCreateStatusParams,
+  parseCreateTaskTypeParams,
+  parseListProjectTypesParams,
+  parseListTaskTypesParams,
+  type ProjectTypeId,
+  type ProjectTypeSummary,
+  StatusCategory,
+  type StatusId,
+  type TaskTypeId,
+  type TaskTypeSummary
+} from "./task-management.js"

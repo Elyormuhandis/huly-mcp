@@ -22,6 +22,7 @@ import { resolveAnnotations } from "./registry.js"
 import { searchTools } from "./search.js"
 import { storageTools } from "./storage.js"
 import { tagCategoryTools } from "./tag-categories.js"
+import { taskManagementTools } from "./task-management.js"
 import { testManagementCoreTools } from "./test-management-core.js"
 import { testManagementPlansTools } from "./test-management-plans.js"
 import { timeTools } from "./time.js"
@@ -48,6 +49,7 @@ const allTools: ReadonlyArray<RegisteredTool> = [
   ...activityTools,
   ...notificationTools,
   ...workspaceTools,
+  ...taskManagementTools,
   ...testManagementCoreTools,
   ...testManagementPlansTools
 ]
