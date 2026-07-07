@@ -209,6 +209,10 @@ export const CreateIssueParamsSchema = Schema.Struct({
   status: Schema.optional(StatusName.annotations({
     description: "Initial status (uses project default if not specified)"
   })),
+  type: Schema.optional(NonEmptyString.annotations({
+    description: "Issue type (task type) name or id, e.g. 'Bug'. Must already exist in the project's project type "
+      + "(create one with create_task_type). Defaults to the project's built-in Issue type."
+  })),
   parentIssue: Schema.optional(IssueIdentifier.annotations({
     description: "Parent issue identifier (e.g., 'HULY-42') to create as sub-issue"
   })),
@@ -250,6 +254,10 @@ export const UpdateIssueParamsSchema = Schema.Struct({
   ),
   status: Schema.optional(StatusName.annotations({
     description: "New status"
+  })),
+  type: Schema.optional(NonEmptyString.annotations({
+    description: "New issue type (task type) name or id, e.g. 'Bug'. Must already exist in the project's project type "
+      + "(create one with create_task_type)."
   })),
   dueDate: Schema.optional(
     Schema.NullOr(Timestamp).annotations({

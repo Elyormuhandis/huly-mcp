@@ -255,6 +255,32 @@ const buildFileUrl = (baseUrl: string, workspaceId: WorkspaceUuid, blobId: strin
   return `${concatLink(baseUrl, "/files")}?${params.toString()}`
 }
 
+/**
+ * Resolve the canonical origin for `url`, following any redirect.
+ *
+ * HULY_URL is often set to a host that 301-redirects to a canonical one
+ * (e.g. `huly.example` → `office.example`). `fetch()` downgrades a redirected
+ * POST to GET and drops the request body + Authorization header, so a file
+ * upload against the redirecting host silently fails with 401 — surfaced as an
+ * empty-message `StorageError`. Uploads must therefore target the final host.
+ */
+const CANONICAL_PROBE_TIMEOUT_MS = 10_000
+
+const resolveCanonicalUrl = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(concatLink(url, "/config.json"), {
+      method: "HEAD",
+      redirect: "follow",
+      signal: AbortSignal.timeout(CANONICAL_PROBE_TIMEOUT_MS)
+    })
+    return new URL(response.url).origin
+  } catch {
+    // ponytail: probe failed (offline / misconfigured) — fall back to the configured URL.
+    // Uploads still work when HULY_URL is already the canonical host.
+    return url
+  }
+}
+
 const connectStorageClient = async (
   config: StorageConnectionConfig
 ): Promise<StorageConnection> => {
@@ -267,9 +293,15 @@ const connectStorageClient = async (
     serverConfig
   )
 
-  // Construct URLs for file operations
-  const filesUrl = concatLink(url, `/files`)
-  const uploadUrl = concatLink(url, serverConfig.UPLOAD_URL)
+  // Target the canonical host directly so a redirect can't strip the upload POST body/auth.
+  const baseUrl = await resolveCanonicalUrl(url)
+
+  // Construct URLs for file operations. UPLOAD_URL may be absolute or root-relative and
+  // can carry a :workspace placeholder (mirrors api-client's own connectStorage()).
+  const filesUrl = concatLink(baseUrl, `/files`)
+  const uploadUrl = (serverConfig.UPLOAD_URL.startsWith("/")
+    ? concatLink(baseUrl, serverConfig.UPLOAD_URL)
+    : serverConfig.UPLOAD_URL).replace(":workspace", workspaceId)
 
   // Create storage client with proper authentication
   const storageClient: StorageClient = createStorageClient(
@@ -280,7 +312,7 @@ const connectStorageClient = async (
   )
 
   return {
-    baseUrl: url,
+    baseUrl,
     storageClient,
     workspaceId
   }

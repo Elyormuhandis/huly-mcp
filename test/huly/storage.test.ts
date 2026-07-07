@@ -4,7 +4,7 @@ import { Effect, Layer } from "effect"
 import * as fs from "node:fs/promises"
 import * as os from "node:os"
 import * as path from "node:path"
-import { expect, vi } from "vitest"
+import { afterEach, beforeEach, expect, vi } from "vitest"
 
 import { HulyConfigService } from "../../src/config/config.js"
 import { FileUploadError, HulyConnectionError, InvalidFileDataError } from "../../src/huly/errors.js"
@@ -626,6 +626,16 @@ describe("HulyStorageClient.layer (real layer with mocked api-client)", () => {
     url: "https://huly.example.com",
     token: "test-token-123",
     workspace: "test-ws"
+  })
+
+  // The layer probes <url>/config.json (via fetch) to resolve the canonical host past any
+  // redirect before building the upload URL. Stub fetch to report no redirect so the probe
+  // stays offline and returns the configured host. Scoped to this describe only.
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn((input: string | URL) => Promise.resolve({ url: String(input), ok: true })))
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   const setupMocksForSuccess = () => {

@@ -52,6 +52,7 @@ import {
   PersonName
 } from "../../domain/schemas/shared.js"
 import type { HulyClient, HulyClientError } from "../client.js"
+import type { TaskTypeNotFoundError } from "../errors-task-management.js"
 import type { InvalidStatusError, IssueNotFoundError, ProjectNotFoundError } from "../errors.js"
 import {
   ComponentNotFoundError,
@@ -95,6 +96,7 @@ type CreateIssueFromTemplateError =
   | IssueTemplateNotFoundError
   | InvalidStatusError
   | PersonNotFoundError
+  | TaskTypeNotFoundError
 
 type UpdateIssueTemplateError =
   | HulyClientError

@@ -17,16 +17,19 @@ import {
   type Status
 } from "@hcengineering/core"
 import { makeRank } from "@hcengineering/rank"
+import type { ProjectType, TaskType } from "@hcengineering/task"
 import { type Issue as HulyIssue, type IssueParentInfo, type Project as HulyProject } from "@hcengineering/tracker"
 import { Effect, Schema } from "effect"
 
 import type { CreateIssueParams, DeleteIssueParams, UpdateIssueParams } from "../../domain/schemas.js"
 import type { CreateIssueResult, DeleteIssueResult, UpdateIssueResult } from "../../domain/schemas/issues.js"
 import { IssueId, IssueIdentifier } from "../../domain/schemas/shared.js"
+import { normalizeForComparison } from "../../utils/normalize.js"
 import type { HulyClient, HulyClientError } from "../client.js"
+import { TaskTypeNotFoundError } from "../errors-task-management.js"
 import type { IssueNotFoundError, ProjectNotFoundError } from "../errors.js"
 import { InvalidStatusError, PersonNotFoundError } from "../errors.js"
-import { tracker } from "../huly-plugins.js"
+import { task, tracker } from "../huly-plugins.js"
 import {
   findIssueInProject,
   findPersonByEmailOrName,
@@ -44,6 +47,7 @@ type CreateIssueError =
   | IssueNotFoundError
   | InvalidStatusError
   | PersonNotFoundError
+  | TaskTypeNotFoundError
 
 type UpdateIssueError =
   | HulyClientError
@@ -51,6 +55,7 @@ type UpdateIssueError =
   | IssueNotFoundError
   | InvalidStatusError
   | PersonNotFoundError
+  | TaskTypeNotFoundError
 
 type DeleteIssueError =
   | HulyClientError
@@ -80,6 +85,28 @@ const resolveAssignee = (
       return yield* new PersonNotFoundError({ identifier: assigneeIdentifier })
     }
     return person
+  })
+
+/**
+ * Resolve an issue type (task type) by name or id within a project's project type.
+ * The issue's `kind` field is a Ref<TaskType>; custom types like "Bug" are task types
+ * defined under the project's ProjectType (create them with create_task_type).
+ */
+const resolveTaskTypeRef = (
+  client: HulyClient["Type"],
+  projectType: Ref<ProjectType>,
+  typeNameOrId: string
+): Effect.Effect<Ref<TaskType>, TaskTypeNotFoundError | HulyClientError> =>
+  Effect.gen(function*() {
+    const taskTypes = yield* client.findAll<TaskType>(task.class.TaskType, { parent: projectType })
+    const normalized = normalizeForComparison(typeNameOrId)
+    const match = taskTypes.find(
+      (t) => String(t._id) === typeNameOrId || normalizeForComparison(t.name) === normalized
+    )
+    if (match === undefined) {
+      return yield* new TaskTypeNotFoundError({ identifier: typeNameOrId })
+    }
+    return match._id
   })
 
 /**
@@ -141,6 +168,10 @@ export const createIssue = (
     const priority = stringToPriority(params.priority || "no-priority")
     const identifier = `${project.identifier}-${sequence}`
 
+    const kind: Ref<TaskType> = params.type !== undefined
+      ? yield* resolveTaskTypeRef(client, project.type, params.type)
+      : tracker.taskTypes.Issue
+
     type ParentData = {
       attachedTo: Ref<Doc>
       attachedToClass: Ref<Class<Doc>>
@@ -178,7 +209,7 @@ export const createIssue = (
       description: descriptionMarkupRef,
       status: statusRef,
       number: sequence,
-      kind: tracker.taskTypes.Issue,
+      kind,
       identifier,
       priority,
       assignee: assigneeRef,
@@ -264,6 +295,10 @@ export const updateIssue = (
 
     if (params.status !== undefined) {
       updateOps.status = yield* resolveStatusByName(statuses, params.status, params.project)
+    }
+
+    if (params.type !== undefined) {
+      updateOps.kind = yield* resolveTaskTypeRef(client, project.type, params.type)
     }
 
     if (params.priority !== undefined) {

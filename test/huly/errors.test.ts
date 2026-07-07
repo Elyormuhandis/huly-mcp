@@ -1,6 +1,7 @@
 import { describe, it } from "@effect/vitest"
 import { Effect, Schema } from "effect"
 import { expect } from "vitest"
+import { ProjectTypeNotFoundError, TaskTypeNotFoundError } from "../../src/huly/errors-task-management.js"
 import {
   ActivityMessageNotFoundError,
   AttachmentNotFoundError,
@@ -733,6 +734,10 @@ describe("Huly Errors", () => {
               return `toolarge:${error.filename}`
             case "InvalidContentTypeError":
               return `contenttype:${error.contentType}`
+            case "ProjectTypeNotFoundError":
+              return `projecttype:${error.identifier}`
+            case "TaskTypeNotFoundError":
+              return `tasktype:${error.identifier}`
           }
         }
 
@@ -790,6 +795,8 @@ describe("Huly Errors", () => {
         expect(
           matchError(new InvalidContentTypeError({ filename: "f.exe", contentType: "application/x-msdownload" }))
         ).toBe("contenttype:application/x-msdownload")
+        expect(matchError(new ProjectTypeNotFoundError({ identifier: "pt-1" }))).toBe("projecttype:pt-1")
+        expect(matchError(new TaskTypeNotFoundError({ identifier: "tt-1" }))).toBe("tasktype:tt-1")
       }))
   })
 })
