@@ -120,7 +120,9 @@ export const CreateStatusParamsSchema = Schema.Struct({
 }).annotations({
   title: "CreateStatusParams",
   description:
-    "Create a new issue status at the workspace level by appending to both the TaskType.statuses array and the ProjectType.statuses array"
+    "Create an issue status, or attach an existing one to task types, by appending to both the TaskType.statuses "
+    + "array and the ProjectType.statuses array. Idempotent by name: an existing status with the same name is reused "
+    + "and attached (created=false), never duplicated. When reusing, `category` is ignored (the existing status keeps its own)."
 })
 export type CreateStatusParams = Schema.Schema.Type<typeof CreateStatusParamsSchema>
 

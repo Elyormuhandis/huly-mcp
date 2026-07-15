@@ -41,7 +41,7 @@ export const taskManagementTools: ReadonlyArray<RegisteredTool> = [
   {
     name: "create_status",
     description:
-      "Create a new issue status at the workspace level. Appends the status to the TaskType.statuses array and the ProjectType.statuses array so it shows up in all projects using that type. Defaults to the tracker's Classic project type if not specified.",
+      "Create an issue status, or attach an existing one to task types. Appends it to TaskType.statuses and ProjectType.statuses so it shows up in all projects using that type. Defaults to the tracker's Classic project type if not specified. Idempotent by name: if the project type already has a status with that name, it is reused and merely attached to the target task type(s) (created=false) rather than duplicated. That is how you give a task type a status it lacks (e.g. add \"In review\" to Bug) — statuses are shared across task types and only membership differs, and setting a status a task type does not have silently dumps the issue to Backlog. Pass taskType to target one type; omit it to apply to all.",
     category: CATEGORY,
     inputSchema: createStatusParamsJsonSchema,
     handler: createToolHandler(

@@ -9,7 +9,7 @@
  *
  * @module
  */
-import type { Data, DocumentQuery, Ref, Space } from "@hcengineering/core"
+import type { Data, DocumentQuery, Ref, Space, Status } from "@hcengineering/core"
 import { generateId } from "@hcengineering/core"
 import { makeRank } from "@hcengineering/rank"
 import type { ProjectType, TaskType } from "@hcengineering/task"
@@ -30,9 +30,10 @@ import type {
   StatusId,
   TaskTypeId
 } from "../../domain/schemas/task-management.js"
+import { normalizeForComparison } from "../../utils/normalize.js"
 import { HulyClient, type HulyClientError } from "../client.js"
 import { ProjectTypeNotFoundError, TaskTypeNotFoundError } from "../errors-task-management.js"
-import { task, tracker } from "../huly-plugins.js"
+import { core, task, tracker } from "../huly-plugins.js"
 import { clampLimit, toRef } from "./shared.js"
 
 // Brand conversion helpers: Huly SDK uses Ref<T> (string brand), our domain uses Effect schema brand.
@@ -179,42 +180,69 @@ export const createStatus = (
 
     const categoryRef = CATEGORY_MAP[params.category]
 
-    // Create the status doc (IssueStatus is in core:space:Model)
-    const statusId: Ref<IssueStatus> = generateId()
-    // eslint-disable-next-line no-restricted-syntax -- IssueStatus has SDK-internal required fields we intentionally omit (e.g., description is optional at runtime)
-    const statusData = {
-      ofAttribute: toRef(tracker.attribute.IssueStatus),
-      name: params.name,
-      category: toRef(categoryRef),
-      rank: makeRank(undefined, undefined)
-    } as unknown as Data<IssueStatus>
+    // Idempotency: statuses are SHARED across task types — only membership
+    // (TaskType.statuses) differs. If one with this name already exists under the
+    // project type, reuse it and attach it where missing; creating a second doc
+    // with the same name would leave two indistinguishable statuses.
+    const knownIds = [...new Set(pt.statuses.map((e) => e._id))]
+    const knownDocs = knownIds.length > 0
+      ? yield* client.findAll<Status>(core.class.Status, { _id: { $in: knownIds } })
+      : []
+    const wanted = normalizeForComparison(params.name)
+    const existing = knownDocs.find((d) => normalizeForComparison(d.name) === wanted)
 
-    yield* client.createDoc<IssueStatus>(
-      tracker.class.IssueStatus,
-      MODEL_SPACE,
-      statusData,
-      statusId
-    )
+    const statusId: Ref<IssueStatus> = existing !== undefined
+      ? toRef<IssueStatus>(existing._id)
+      : generateId()
 
-    // Append to each target TaskType.statuses
+    if (existing === undefined) {
+      // Create the status doc (IssueStatus is in core:space:Model)
+      // eslint-disable-next-line no-restricted-syntax -- IssueStatus has SDK-internal required fields we intentionally omit (e.g., description is optional at runtime)
+      const statusData = {
+        ofAttribute: toRef(tracker.attribute.IssueStatus),
+        name: params.name,
+        category: toRef(categoryRef),
+        rank: makeRank(undefined, undefined)
+      } as unknown as Data<IssueStatus>
+
+      yield* client.createDoc<IssueStatus>(
+        tracker.class.IssueStatus,
+        MODEL_SPACE,
+        statusData,
+        statusId
+      )
+    }
+
+    // Append to each target TaskType.statuses that lacks it
     for (const tt of targetTaskTypes) {
+      if (tt.statuses.includes(statusId)) continue
       const newStatuses = [...tt.statuses, statusId]
       yield* client.updateDoc<TaskType>(task.class.TaskType, tt.space, tt._id, {
         statuses: newStatuses
       })
     }
 
-    // Append to ProjectType.statuses (one entry per target task type)
-    const newPtEntries = targetTaskTypes.map((tt) => ({ _id: statusId, taskType: tt._id }))
-    yield* client.updateDoc<ProjectType>(task.class.ProjectType, pt.space, pt._id, {
-      statuses: [...pt.statuses, ...newPtEntries]
-    })
+    // Append to ProjectType.statuses for (status, taskType) pairs not already there.
+    // Carry over the status's existing color so it looks the same on every task type.
+    const template = pt.statuses.find((e) => e._id === statusId)
+    const newPtEntries = targetTaskTypes
+      .filter((tt) => !pt.statuses.some((e) => e._id === statusId && e.taskType === tt._id))
+      .map((tt) => ({
+        ...(template?.color !== undefined ? { color: template.color } : {}),
+        _id: statusId,
+        taskType: tt._id
+      }))
+    if (newPtEntries.length > 0) {
+      yield* client.updateDoc<ProjectType>(task.class.ProjectType, pt.space, pt._id, {
+        statuses: [...pt.statuses, ...newPtEntries]
+      })
+    }
 
     return {
       id: asBranded<StatusId>(statusId),
-      name: params.name,
-      category: categoryRef,
-      created: true,
+      name: existing?.name ?? params.name,
+      category: existing?.category ?? categoryRef,
+      created: existing === undefined,
       attachedTaskTypes: targetTaskTypes.map((t) => asBranded<TaskTypeId>(t._id))
     }
   })

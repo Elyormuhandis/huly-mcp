@@ -401,7 +401,7 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=8080 MCP_HTTP_HOST=0.0.0.0 npx -y @firfi/huly-m
 |------|-------------|
 | `list_project_types` | List project types (workspace-level templates like 'Classic project'). A ProjectType defines the task types and statuses available to projects that inherit from it. |
 | `list_task_types` | List task types (issue types) in the workspace. Task types are children of a ProjectType and define a kind of issue (e.g., Bug, Story). Optionally filter by project type. |
-| `create_status` | Create a new issue status at the workspace level. Appends the status to the TaskType.statuses array and the ProjectType.statuses array so it shows up in all projects using that type. Defaults to the tracker's Classic project type if not specified. |
+| `create_status` | Create an issue status, or attach an existing one to task types. Appends it to TaskType.statuses and ProjectType.statuses so it shows up in all projects using that type. Defaults to the tracker's Classic project type if not specified. Idempotent by name: if the project type already has a status with that name, it is reused and merely attached to the target task type(s) (created=false) rather than duplicated. That is how you give a task type a status it lacks (e.g. add \ |
 | `create_task_type` | Create a new task type (issue type) by copying the configuration (statuses, ofClass, statusCategories) of an existing task type as template. Appends the new task type to the ProjectType.tasks array. Defaults to the tracker's Classic project type. Idempotent: returns existing task type if name matches. |
 
 ### Test-Management
