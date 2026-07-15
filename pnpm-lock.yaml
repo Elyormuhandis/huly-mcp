@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@hcengineering/api-client@0.7.19':
+    hash: bee4883cbdeb329a483d66b27a2b0f74d738c870227a29a5950f36d64db62ca6
+    path: patches/@hcengineering__api-client@0.7.19.patch
+
 importers:
 
   .:
@@ -41,7 +46,7 @@ importers:
         version: 0.7.0
       '@hcengineering/api-client':
         specifier: 0.7.19
-        version: 0.7.19(prosemirror-inputrules@1.5.1)(prosemirror-model@1.25.4)(prosemirror-state@1.4.4)(prosemirror-view@1.41.6)
+        version: 0.7.19(patch_hash=bee4883cbdeb329a483d66b27a2b0f74d738c870227a29a5950f36d64db62ca6)(prosemirror-inputrules@1.5.1)(prosemirror-model@1.25.4)(prosemirror-state@1.4.4)(prosemirror-view@1.41.6)
       '@hcengineering/attachment':
         specifier: 0.7.0
         version: 0.7.0
@@ -4415,7 +4420,7 @@ snapshots:
     dependencies:
       '@hcengineering/platform': 0.7.20
 
-  '@hcengineering/api-client@0.7.19(prosemirror-inputrules@1.5.1)(prosemirror-model@1.25.4)(prosemirror-state@1.4.4)(prosemirror-view@1.41.6)':
+  '@hcengineering/api-client@0.7.19(patch_hash=bee4883cbdeb329a483d66b27a2b0f74d738c870227a29a5950f36d64db62ca6)(prosemirror-inputrules@1.5.1)(prosemirror-model@1.25.4)(prosemirror-state@1.4.4)(prosemirror-view@1.41.6)':
     dependencies:
       '@hcengineering/account-client': 0.7.25
       '@hcengineering/client': 0.7.19

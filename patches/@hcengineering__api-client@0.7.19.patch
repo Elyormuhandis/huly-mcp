@@ -1,0 +1,13 @@
+diff --git a/lib/rest/rest.js b/lib/rest/rest.js
+index e680d7030eae2423d231d8afb84410ad709a5e1a..db0dc283b217fd203dff93f0145c53f3452ca007 100644
+--- a/lib/rest/rest.js
++++ b/lib/rest/rest.js
+@@ -92,7 +92,7 @@ class RestClientImpl {
+     if (result.error !== void 0) {
+       throw new import_platform.PlatformError(result.error);
+     }
+-    if (result.lookupMap !== void 0) {
++    if (result.lookupMap != null) {
+       for (const d of result) {
+         if (d.$lookup !== void 0) {
+           for (const [k, v] of Object.entries(d.$lookup)) {

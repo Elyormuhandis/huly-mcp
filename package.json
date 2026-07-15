@@ -68,7 +68,10 @@
       "@parcel/watcher",
       "msgpackr-extract",
       "unrs-resolver"
-    ]
+    ],
+    "patchedDependencies": {
+      "@hcengineering/api-client@0.7.19": "patches/@hcengineering__api-client@0.7.19.patch"
+    }
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
