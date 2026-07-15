@@ -1,4 +1,4 @@
-import type { Channel, Person } from "@hcengineering/contact"
+import type { Channel, Person, SocialIdentity } from "@hcengineering/contact"
 import type { Class, Doc, DocumentQuery, FindOptions, PersonUuid, Ref, Status, WithLookup } from "@hcengineering/core"
 import type { ProjectType } from "@hcengineering/task"
 import type { Issue as HulyIssue, Project as HulyProject } from "@hcengineering/tracker"
@@ -336,6 +336,21 @@ export const findPersonByEmailOrName = (
       if (person !== undefined) return person
     }
 
+    // 1b. Exact SocialIdentity email match. Login/account emails live on
+    // SocialIdentity, not always on a contact Channel (Channels are frequently
+    // empty in this workspace), so an email lookup must check here too.
+    const exactSocial = yield* client.findOne<SocialIdentity>(
+      contact.class.SocialIdentity,
+      { value: emailOrName }
+    )
+    if (exactSocial !== undefined) {
+      const person = yield* client.findOne<Person>(
+        contact.class.Person,
+        { _id: toRef<Person>(exactSocial.attachedTo) }
+      )
+      if (person !== undefined) return person
+    }
+
     // 2. Exact name match
     const exactPerson = yield* client.findOne<Person>(
       contact.class.Person,
@@ -356,6 +371,19 @@ export const findPersonByEmailOrName = (
       const person = yield* client.findOne<Person>(
         contact.class.Person,
         { _id: toRef<Person>(likeChannel.attachedTo) }
+      )
+      if (person !== undefined) return person
+    }
+
+    // 3b. Substring SocialIdentity email match via $like.
+    const likeSocial = yield* client.findOne<SocialIdentity>(
+      contact.class.SocialIdentity,
+      { value: { $like: `%${escaped}%` } }
+    )
+    if (likeSocial !== undefined) {
+      const person = yield* client.findOne<Person>(
+        contact.class.Person,
+        { _id: toRef<Person>(likeSocial.attachedTo) }
       )
       if (person !== undefined) return person
     }

@@ -2,7 +2,8 @@ import type {
   Channel,
   Employee as HulyEmployee,
   Organization as HulyOrganization,
-  Person as HulyPerson
+  Person as HulyPerson,
+  SocialIdentity
 } from "@hcengineering/contact"
 import { AvatarType } from "@hcengineering/contact"
 import {
@@ -87,6 +88,24 @@ const batchGetEmailsForPersons = <T extends Doc>(
         emailMap.set(channel.attachedTo, channel.value)
       }
     }
+
+    // Fall back to SocialIdentity (login/account email) for persons with no
+    // contact Channel. A SocialIdentity value is an email only when it contains
+    // "@" (other kinds, e.g. "huly", carry an opaque uuid).
+    const missing = personIds.filter(id => !emailMap.has(id))
+    if (missing.length > 0) {
+      const missingRefs: Array<Ref<HulyPerson>> = []
+      for (const id of missing) missingRefs.push(toRef<HulyPerson>(id))
+      const socials = yield* client.findAll<SocialIdentity>(
+        contact.class.SocialIdentity,
+        { attachedTo: { $in: missingRefs } }
+      )
+      for (const s of socials) {
+        if (s.value.includes("@") && !emailMap.has(s.attachedTo)) {
+          emailMap.set(s.attachedTo, s.value)
+        }
+      }
+    }
     return emailMap
   })
 
@@ -95,14 +114,31 @@ const findPersonIdsByEmail = (
   emailSearch: string
 ): Effect.Effect<Array<Ref<HulyPerson>>, HulyClientError> =>
   Effect.gen(function*() {
+    const pattern = `%${escapeLikeWildcards(emailSearch)}%`
     const channels = yield* client.findAll<Channel>(
       contact.class.Channel,
-      {
-        provider: contact.channelProvider.Email,
-        value: { $like: `%${escapeLikeWildcards(emailSearch)}%` }
-      }
+      { provider: contact.channelProvider.Email, value: { $like: pattern } }
     )
-    return channels.map(c => toRef<HulyPerson>(c.attachedTo))
+    // Also match login/account emails on SocialIdentity (Channels are often empty).
+    const socials = yield* client.findAll<SocialIdentity>(
+      contact.class.SocialIdentity,
+      { value: { $like: pattern } }
+    )
+    const seen = new Set<string>()
+    const ids: Array<Ref<HulyPerson>> = []
+    for (const c of channels) {
+      if (!seen.has(c.attachedTo)) {
+        seen.add(c.attachedTo)
+        ids.push(toRef<HulyPerson>(c.attachedTo))
+      }
+    }
+    for (const s of socials) {
+      if (s.value.includes("@") && !seen.has(s.attachedTo)) {
+        seen.add(s.attachedTo)
+        ids.push(toRef<HulyPerson>(s.attachedTo))
+      }
+    }
+    return ids
   })
 
 export const listPersons = (
@@ -178,7 +214,18 @@ const findPersonByEmail = (
     )
 
     if (channels.length === 0) {
-      return undefined
+      // No contact Channel — try the login/account email on SocialIdentity.
+      const social = yield* client.findOne<SocialIdentity>(
+        contact.class.SocialIdentity,
+        { value: email }
+      )
+      if (social === undefined) {
+        return undefined
+      }
+      return yield* client.findOne<HulyPerson>(
+        contact.class.Person,
+        { _id: toRef<HulyPerson>(social.attachedTo) }
+      )
     }
 
     const channel = channels[0]
