@@ -74,6 +74,7 @@ export const IssueSummarySchema = Schema.Struct({
   status: StatusName,
   priority: Schema.optional(IssuePrioritySchema),
   assignee: Schema.optional(PersonName),
+  createdBy: Schema.optional(PersonName),
   parentIssue: Schema.optional(IssueIdentifier),
   subIssues: Schema.optional(Schema.Number),
   modifiedOn: Schema.optional(Timestamp)
@@ -93,6 +94,7 @@ export const IssueSchema = Schema.Struct({
   priority: Schema.optional(IssuePrioritySchema),
   assignee: Schema.optional(PersonName),
   assigneeRef: Schema.optional(PersonRefSchema),
+  createdBy: Schema.optional(PersonName),
   labels: Schema.optional(Schema.Array(LabelSchema)),
   project: ProjectIdentifier,
   parentIssue: Schema.optional(IssueIdentifier),
@@ -117,6 +119,10 @@ const ListIssuesParamsBase = Schema.Struct({
   })),
   assignee: Schema.optional(Email.annotations({
     description: "Filter by assignee email"
+  })),
+  createdBy: Schema.optional(NonEmptyString.annotations({
+    description: "Filter by issue creator — email or full name "
+      + "(e.g. 'saidamir.kobiljonov@softteampro.uz' or 'Kobiljonov')"
   })),
   parentIssue: Schema.optional(IssueIdentifier.annotations({
     description: "Filter to children of this parent issue (e.g., 'HULY-42')"

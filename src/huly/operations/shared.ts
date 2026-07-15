@@ -374,11 +374,20 @@ export const resolveStatusByName = (
   project: string
 ): Effect.Effect<Ref<Status>, InvalidStatusError> => {
   const normalizedInput = normalizeForComparison(statusName)
-  const matchingStatus = statuses.find(
-    s => normalizeForComparison(s.name) === normalizedInput
-  )
-  if (matchingStatus === undefined) {
-    return Effect.fail(new InvalidStatusError({ status: statusName, project }))
-  }
-  return Effect.succeed(matchingStatus._id)
+
+  // 1. Exact status id (hex ref) — lets callers pass the id straight through.
+  const byId = statuses.find(s => s._id === statusName)
+  if (byId !== undefined) return Effect.succeed(byId._id)
+
+  // 2. Exact (normalized) name match.
+  const exact = statuses.find(s => normalizeForComparison(s.name) === normalizedInput)
+  if (exact !== undefined) return Effect.succeed(exact._id)
+
+  // 3. Unique substring match — "progress" resolves "In Progress" when unambiguous.
+  const partial = statuses.filter(s => normalizeForComparison(s.name).includes(normalizedInput))
+  if (partial.length === 1) return Effect.succeed(partial[0]._id)
+
+  // Fail with the valid options so the caller doesn't have to call list_statuses first.
+  const available = statuses.map(s => s.name).join(", ")
+  return Effect.fail(new InvalidStatusError({ status: statusName, project, available }))
 }

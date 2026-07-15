@@ -3,8 +3,15 @@
  *
  * @module
  */
-import type { Person } from "@hcengineering/contact"
-import { type DocumentQuery, type Ref, SortingOrder, type Status, type WithLookup } from "@hcengineering/core"
+import type { Person, SocialIdentity } from "@hcengineering/contact"
+import {
+  type DocumentQuery,
+  type PersonId,
+  type Ref,
+  SortingOrder,
+  type Status,
+  type WithLookup
+} from "@hcengineering/core"
 import { type Issue as HulyIssue } from "@hcengineering/tracker"
 import { Effect, Schema } from "effect"
 
@@ -15,6 +22,7 @@ import type { HulyClient, HulyClientError } from "../client.js"
 import type { ComponentNotFoundError, InvalidStatusError, ProjectNotFoundError } from "../errors.js"
 import { HulyConnectionError, IssueNotFoundError } from "../errors.js"
 import { contact, tracker } from "../huly-plugins.js"
+import { buildSocialIdToPersonNameMap } from "./channels.js"
 import { findComponentByIdOrLabel } from "./components.js"
 import { escapeLikeWildcards, withLookup } from "./query-helpers.js"
 import {
@@ -109,6 +117,18 @@ export const listIssues = (
       }
     }
 
+    if (params.createdBy !== undefined) {
+      const creatorPerson = yield* findPersonByEmailOrName(client, params.createdBy)
+      if (creatorPerson === undefined) return []
+      // A person has one social identity per provider; Doc.createdBy holds one of them.
+      const socialIdentities = yield* client.findAll<SocialIdentity>(
+        contact.class.SocialIdentity,
+        { attachedTo: creatorPerson._id }
+      )
+      if (socialIdentities.length === 0) return []
+      query.createdBy = { $in: socialIdentities.map((si) => si._id) }
+    }
+
     // Apply title search using $like operator
     if (params.titleSearch !== undefined && params.titleSearch.trim() !== "") {
       query.title = { $like: `%${escapeLikeWildcards(params.titleSearch)}%` }
@@ -178,6 +198,11 @@ export const listIssues = (
       )
     )
 
+    const creatorIds = [
+      ...new Set(issues.map((issue) => issue.createdBy).filter((id): id is PersonId => id !== undefined))
+    ]
+    const creatorNames = yield* buildSocialIdToPersonNameMap(client, creatorIds)
+
     const rawSummaries = issues.map((issue) => {
       const statusName = resolveStatusName(statuses, issue.status)
       const assigneeName = issue.$lookup?.assignee?.name
@@ -191,6 +216,7 @@ export const listIssues = (
         status: statusName,
         priority: priorityToString(issue.priority),
         assignee: assigneeName,
+        createdBy: issue.createdBy !== undefined ? creatorNames.get(issue.createdBy) : undefined,
         parentIssue: directParent?.identifier,
         subIssues: issue.subIssues > 0 ? issue.subIssues : undefined,
         modifiedOn: issue.modifiedOn
@@ -247,6 +273,11 @@ export const getIssue = (
       ? yield* client.findOne<Person>(contact.class.Person, { _id: issue.assignee })
       : undefined
 
+    const creatorNames = issue.createdBy !== undefined
+      ? yield* buildSocialIdToPersonNameMap(client, [issue.createdBy])
+      : undefined
+    const createdByName = issue.createdBy !== undefined ? creatorNames?.get(issue.createdBy) : undefined
+
     const description = issue.description
       ? yield* client.fetchMarkup(
         issue._class,
@@ -271,6 +302,7 @@ export const getIssue = (
       assigneeRef: person
         ? { id: person._id, name: person.name }
         : undefined,
+      createdBy: createdByName,
       project: params.project,
       parentIssue: directParent?.identifier,
       subIssues: issue.subIssues > 0 ? issue.subIssues : undefined,

@@ -41,11 +41,15 @@ export class InvalidStatusError extends Schema.TaggedError<InvalidStatusError>()
   "InvalidStatusError",
   {
     status: Schema.String,
-    project: Schema.String
+    project: Schema.String,
+    available: Schema.optional(Schema.String)
   }
 ) {
   override get message(): string {
-    return `Invalid status '${this.status}' for project '${this.project}'`
+    const base = `Invalid status '${this.status}' for project '${this.project}'`
+    return this.available !== undefined && this.available !== ""
+      ? `${base}. Available statuses: ${this.available}`
+      : base
   }
 }
 
