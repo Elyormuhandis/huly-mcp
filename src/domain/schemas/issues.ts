@@ -8,6 +8,7 @@ import {
   Email,
   IssueIdentifier,
   LimitParam,
+  MilestoneIdentifier,
   NonEmptyString,
   PersonId,
   PersonName,
@@ -76,6 +77,9 @@ export const IssueSummarySchema = Schema.Struct({
   assignee: Schema.optional(PersonName),
   createdBy: Schema.optional(PersonName),
   parentIssue: Schema.optional(IssueIdentifier),
+  // Milestone (sprint) label the issue is assigned to, if any. String (not branded) to avoid a
+  // decode failure on the whole list if a label is ever empty.
+  milestone: Schema.optional(Schema.String),
   subIssues: Schema.optional(Schema.Number),
   modifiedOn: Schema.optional(Timestamp)
 }).annotations({
@@ -98,6 +102,7 @@ export const IssueSchema = Schema.Struct({
   labels: Schema.optional(Schema.Array(LabelSchema)),
   project: ProjectIdentifier,
   parentIssue: Schema.optional(IssueIdentifier),
+  milestone: Schema.optional(Schema.String),
   subIssues: Schema.optional(Schema.Number),
   modifiedOn: Schema.optional(Timestamp),
   createdOn: Schema.optional(Timestamp),
@@ -139,6 +144,9 @@ const ListIssuesParamsBase = Schema.Struct({
   })),
   component: Schema.optional(ComponentIdentifier.annotations({
     description: "Filter by component ID or label"
+  })),
+  milestone: Schema.optional(MilestoneIdentifier.annotations({
+    description: "Filter by milestone (sprint) ID or label (e.g., 'Sprint 16 - 2W')"
   })),
   hasAssignee: Schema.optional(Schema.Boolean.annotations({
     description: "Filter by assignee presence. true = only assigned issues, false = only unassigned issues."

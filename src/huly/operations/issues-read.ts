@@ -12,7 +12,7 @@ import {
   type Status,
   type WithLookup
 } from "@hcengineering/core"
-import { type Issue as HulyIssue } from "@hcengineering/tracker"
+import { type Issue as HulyIssue, type Milestone as HulyMilestone } from "@hcengineering/tracker"
 import { Effect, Schema } from "effect"
 
 import type { GetIssueParams, Issue, IssueSummary, ListIssuesParams } from "../../domain/schemas.js"
@@ -27,13 +27,15 @@ import { findComponentByIdOrLabel } from "./components.js"
 import { escapeLikeWildcards, withLookup } from "./query-helpers.js"
 import {
   clampLimit,
+  findByNameOrId,
   findIssueInProject,
   findPersonByEmailOrName,
   findProjectWithStatuses,
   parseIssueIdentifier,
   priorityToString,
   resolveStatusByName,
-  type StatusInfo
+  type StatusInfo,
+  toRef
 } from "./shared.js"
 
 type ListIssuesError =
@@ -156,6 +158,18 @@ export const listIssues = (
       }
     }
 
+    // Filter by milestone (sprint): resolve by _id first, then by label — same as set_issue_milestone.
+    if (params.milestone !== undefined) {
+      const milestone = yield* findByNameOrId<HulyMilestone>(
+        client,
+        tracker.class.Milestone,
+        { space: project._id, _id: toRef<HulyMilestone>(params.milestone) },
+        { space: project._id, label: params.milestone }
+      )
+      if (milestone === undefined) return []
+      query.milestone = milestone._id
+    }
+
     if (params.hasAssignee === true) {
       query.assignee = { $ne: null }
     } else if (params.hasAssignee === false) {
@@ -203,6 +217,13 @@ export const listIssues = (
     ]
     const creatorNames = yield* buildSocialIdToPersonNameMap(client, creatorIds)
 
+    // Ref → label for the milestone (sprint) column. One query per list; milestones per project are few.
+    const milestones = yield* client.findAll<HulyMilestone>(
+      tracker.class.Milestone,
+      { space: project._id }
+    )
+    const milestoneLabels = new Map(milestones.map((m) => [m._id, m.label]))
+
     const rawSummaries = issues.map((issue) => {
       const statusName = resolveStatusName(statuses, issue.status)
       const assigneeName = issue.$lookup?.assignee?.name
@@ -218,6 +239,7 @@ export const listIssues = (
         assignee: assigneeName,
         createdBy: issue.createdBy !== undefined ? creatorNames.get(issue.createdBy) : undefined,
         parentIssue: directParent?.identifier,
+        milestone: issue.milestone != null ? milestoneLabels.get(issue.milestone) : undefined,
         subIssues: issue.subIssues > 0 ? issue.subIssues : undefined,
         modifiedOn: issue.modifiedOn
       }
@@ -292,6 +314,10 @@ export const getIssue = (
       ? issue.parents[issue.parents.length - 1]
       : undefined
 
+    const milestoneDoc = issue.milestone != null
+      ? yield* client.findOne<HulyMilestone>(tracker.class.Milestone, { _id: issue.milestone })
+      : undefined
+
     return yield* parseIssue({
       identifier: issue.identifier,
       title: issue.title,
@@ -305,6 +331,7 @@ export const getIssue = (
       createdBy: createdByName,
       project: params.project,
       parentIssue: directParent?.identifier,
+      milestone: milestoneDoc?.label,
       subIssues: issue.subIssues > 0 ? issue.subIssues : undefined,
       modifiedOn: issue.modifiedOn,
       createdOn: issue.createdOn,
