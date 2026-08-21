@@ -7,13 +7,19 @@ export interface ActivityMessage {
   readonly id: ActivityMessageId
   readonly objectId: string
   readonly objectClass: ObjectClassName
+  /** Subclass of the row: `chunter:class:ChatMessage` = a human comment, `DocUpdateMessage` = a system event. */
+  readonly messageClass?: ObjectClassName | undefined
   readonly modifiedBy?: string | undefined
+  /** Display name behind `modifiedBy`, when it resolves to a Person. */
+  readonly author?: string | undefined
   readonly modifiedOn?: number | undefined
   readonly isPinned?: boolean | undefined
   readonly replies?: number | undefined
   readonly reactions?: number | undefined
   readonly editedOn?: number | null | undefined
+  /** System events only: created / updated / removed. */
   readonly action?: string | undefined
+  /** Comment body as markdown. Present on ChatMessage rows. */
   readonly message?: string | undefined
 }
 

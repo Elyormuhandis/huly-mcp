@@ -1,9 +1,11 @@
 import type {
   ActivityMessage as HulyActivityMessage,
+  DocUpdateMessage as HulyDocUpdateMessage,
   Reaction as HulyReaction,
   SavedMessage as HulySavedMessage,
   UserMentionInfo
 } from "@hcengineering/activity"
+import type { ChatMessage as HulyChatMessage } from "@hcengineering/chunter"
 import type { AttachedData, Class, Doc, Ref } from "@hcengineering/core"
 import { generateId, SortingOrder } from "@hcengineering/core"
 import { Effect } from "effect"
@@ -29,9 +31,11 @@ import type {
 import { ActivityMessageId, EmojiCode, NonEmptyString, ObjectClassName } from "../../domain/schemas/shared.js"
 import { HulyClient, type HulyClientError } from "../client.js"
 import { ActivityMessageNotFoundError, ReactionNotFoundError, SavedMessageNotFoundError } from "../errors.js"
+import { buildSocialIdToPersonNameMap } from "./channels.js"
+import { optionalMarkupToMarkdown } from "./markup.js"
 import { clampLimit, findOneOrFail, toRef } from "./shared.js"
 
-import { activity, core } from "../huly-plugins.js"
+import { activity, chunter, core } from "../huly-plugins.js"
 
 type ListActivityError = HulyClientError
 
@@ -49,6 +53,15 @@ type ListSavedMessagesError = HulyClientError
 
 type ListMentionsError = HulyClientError
 
+/**
+ * `findAll(ActivityMessage)` returns every subclass in one list, so each row has to be narrowed
+ * before its text is readable. Predicates rather than casts — the repo bans `as`.
+ */
+const isChatMessage = (msg: HulyActivityMessage): msg is HulyChatMessage => msg._class === chunter.class.ChatMessage
+
+const isDocUpdateMessage = (msg: HulyActivityMessage): msg is HulyDocUpdateMessage =>
+  msg._class === activity.class.DocUpdateMessage
+
 // SDK: Data<Reaction> requires createBy (PersonId, branded string) but server populates from auth context.
 // PersonId = string & { __personId: true }; no SDK factory exists. Empty string is overwritten server-side.
 // eslint-disable-next-line no-restricted-syntax -- see above
@@ -57,6 +70,13 @@ const serverPopulatedCreateBy: HulyReaction["createBy"] = "" as HulyReaction["cr
 /**
  * List activity messages for an object.
  * Results sorted by modifiedOn descending (newest first).
+ *
+ * `activity.class.ActivityMessage` is the BASE class and carries no text of its own, so the
+ * subclass has to be read to get anything readable out of a row: a human comment is a
+ * `chunter.class.ChatMessage` (its markup lives in `message`), while a system event is a
+ * `DocUpdateMessage` (`action` = created/updated/removed). Mapping only the base fields returned
+ * rows that were pure metadata — which made document comments unreadable through this tool, since
+ * `list_comments` only covers issues.
  */
 export const listActivity = (
   params: ListActivityParams
@@ -80,10 +100,20 @@ export const listActivity = (
       }
     )
 
+    // modifiedBy is an opaque social id; a caller reading a discussion needs the name.
+    const authorNames = yield* buildSocialIdToPersonNameMap(
+      client,
+      [...new Set(messages.map((msg) => msg.modifiedBy))]
+    )
+
     const result: Array<ActivityMessage> = messages.map((msg) => ({
       id: ActivityMessageId.make(msg._id),
       objectId: msg.attachedTo,
       objectClass: ObjectClassName.make(msg.attachedToClass),
+      messageClass: ObjectClassName.make(msg._class),
+      message: isChatMessage(msg) ? optionalMarkupToMarkdown(msg.message, undefined) : undefined,
+      action: isDocUpdateMessage(msg) ? msg.action : undefined,
+      author: authorNames.get(msg.modifiedBy),
       modifiedBy: msg.modifiedBy,
       modifiedOn: msg.modifiedOn,
       isPinned: msg.isPinned,

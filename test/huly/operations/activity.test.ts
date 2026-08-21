@@ -5,8 +5,17 @@ import type {
   SavedMessage as HulySavedMessage,
   UserMentionInfo
 } from "@hcengineering/activity"
-import type { Person } from "@hcengineering/contact"
-import { type Class, type Doc, type PersonId, type Ref, type Space, toFindResult } from "@hcengineering/core"
+import { AvatarType, type Person, type SocialIdentity, type SocialIdentityRef } from "@hcengineering/contact"
+import {
+  type Class,
+  type Doc,
+  type Markup,
+  type PersonId,
+  type Ref,
+  SocialIdType,
+  type Space,
+  toFindResult
+} from "@hcengineering/core"
 import { Effect } from "effect"
 import { expect } from "vitest"
 import { HulyClient, type HulyClientOperations } from "../../../src/huly/client.js"
@@ -15,7 +24,7 @@ import type {
   ReactionNotFoundError,
   SavedMessageNotFoundError
 } from "../../../src/huly/errors.js"
-import { activity, core } from "../../../src/huly/huly-plugins.js"
+import { activity, chunter, contact, core } from "../../../src/huly/huly-plugins.js"
 import {
   addReaction,
   listActivity,
@@ -26,7 +35,41 @@ import {
   saveMessage,
   unsaveMessage
 } from "../../../src/huly/operations/activity.js"
+import { markdownToMarkupString } from "../../../src/huly/operations/markup.js"
 import { activityMessageId, emojiCode, objectClassName } from "../../helpers/brands.js"
+
+/** Real ProseMirror markup, so the assertions exercise the actual markup->markdown conversion. */
+const markup: (text: string) => Markup = markdownToMarkupString
+
+const makeSocialIdentity = (id: string, personRef: string): SocialIdentity => {
+  const result: SocialIdentity = {
+    _id: id as SocialIdentityRef,
+    _class: contact.class.SocialIdentity,
+    space: "space-1" as Ref<Space>,
+    attachedTo: personRef as Ref<Person>,
+    attachedToClass: contact.class.Person,
+    collection: "socialIds",
+    type: SocialIdType.EMAIL,
+    value: `${id}@example.com`,
+    key: `email:${id}`,
+    modifiedBy: "user-1" as PersonId,
+    modifiedOn: 0
+  }
+  return result
+}
+
+const makePerson = (id: string, name: string): Person => {
+  const result: Person = {
+    _id: id as Ref<Person>,
+    _class: contact.class.Person,
+    space: "space-1" as Ref<Space>,
+    name,
+    avatarType: AvatarType.COLOR,
+    modifiedBy: "user-1" as PersonId,
+    modifiedOn: 0
+  }
+  return result
+}
 
 const makeActivityMessage = (overrides?: Partial<HulyActivityMessage>): HulyActivityMessage => {
   const result: HulyActivityMessage = {
@@ -98,6 +141,10 @@ interface MockConfig {
   reactions?: Array<HulyReaction>
   savedMessages?: Array<HulySavedMessage>
   mentions?: Array<UserMentionInfo>
+  // listActivity resolves modifiedBy -> person name via SocialIdentity, so both are needed
+  // to exercise the author field.
+  socialIdentities?: Array<SocialIdentity>
+  persons?: Array<Person>
   captureAddCollection?: { attributes?: Record<string, unknown>; id?: string }
   captureCreateDoc?: { attributes?: Record<string, unknown>; id?: string }
   captureRemoveDoc?: { called?: boolean }
@@ -108,6 +155,8 @@ const createTestLayerWithMocks = (config: MockConfig) => {
   const reactions = config.reactions ?? []
   const savedMessages = config.savedMessages ?? []
   const mentions = config.mentions ?? []
+  const socialIdentities = config.socialIdentities ?? []
+  const persons = config.persons ?? []
 
   const findAllImpl: HulyClientOperations["findAll"] = ((_class: unknown, query: unknown, _options: unknown) => {
     if (_class === activity.class.ActivityMessage) {
@@ -128,6 +177,20 @@ const createTestLayerWithMocks = (config: MockConfig) => {
     }
     if (_class === activity.class.UserMentionInfo) {
       return Effect.succeed(toFindResult(mentions))
+    }
+    if (_class === contact.class.SocialIdentity) {
+      const q = query as { _id?: { $in?: Array<string> } }
+      const wanted = q._id?.$in
+      return Effect.succeed(
+        toFindResult(wanted === undefined ? socialIdentities : socialIdentities.filter(si => wanted.includes(si._id)))
+      )
+    }
+    if (_class === contact.class.Person) {
+      const q = query as { _id?: { $in?: Array<string> } }
+      const wanted = q._id?.$in
+      return Effect.succeed(
+        toFindResult(wanted === undefined ? persons : persons.filter(p => wanted.includes(p._id)))
+      )
     }
     return Effect.succeed(toFindResult([]))
   }) as HulyClientOperations["findAll"]
@@ -271,6 +334,10 @@ describe("listActivity", () => {
         id: "msg-1",
         objectId: "obj-1",
         objectClass: "tracker:class:Issue",
+        messageClass: activity.class.ActivityMessage,
+        message: undefined,
+        action: undefined,
+        author: undefined,
         modifiedBy: "person-x",
         modifiedOn: 1706500000000,
         isPinned: true,
@@ -278,6 +345,79 @@ describe("listActivity", () => {
         reactions: 3,
         editedOn: 1706500001000
       })
+    }))
+
+  // A document comment is a ChatMessage; its markup lives on the subclass, not on ActivityMessage.
+  // Reading only the base class is what made document comments unreadable through this tool.
+  it.effect("returns the comment body for a ChatMessage row", () =>
+    Effect.gen(function*() {
+      const comment = makeActivityMessage({
+        _id: "msg-chat" as Ref<HulyActivityMessage>,
+        _class: chunter.class.ChatMessage,
+        attachedTo: "doc-1" as Ref<Doc>,
+        attachedToClass: "document:class:Document" as Ref<Class<Doc>>,
+        message: markup("Предлагаю вариант 2")
+      } as Partial<HulyActivityMessage>)
+
+      const testLayer = createTestLayerWithMocks({ activityMessages: [comment] })
+
+      const result = yield* listActivity({
+        objectId: "doc-1",
+        objectClass: objectClassName("document:class:Document")
+      }).pipe(Effect.provide(testLayer))
+
+      expect(result[0].message).toBe("Предлагаю вариант 2")
+      expect(result[0].messageClass).toBe(chunter.class.ChatMessage)
+      expect(result[0].action).toBeUndefined()
+    }))
+
+  it.effect("returns the action for a DocUpdateMessage row, and no body", () =>
+    Effect.gen(function*() {
+      const event = makeActivityMessage({
+        _id: "msg-update" as Ref<HulyActivityMessage>,
+        _class: activity.class.DocUpdateMessage,
+        attachedTo: "doc-1" as Ref<Doc>,
+        attachedToClass: "document:class:Document" as Ref<Class<Doc>>,
+        action: "update"
+      } as Partial<HulyActivityMessage>)
+
+      const testLayer = createTestLayerWithMocks({ activityMessages: [event] })
+
+      const result = yield* listActivity({
+        objectId: "doc-1",
+        objectClass: objectClassName("document:class:Document")
+      }).pipe(Effect.provide(testLayer))
+
+      expect(result[0].action).toBe("update")
+      expect(result[0].message).toBeUndefined()
+    }))
+
+  // modifiedBy alone is an opaque social id — useless to whoever is reading the discussion.
+  it.effect("resolves the author name behind modifiedBy", () =>
+    Effect.gen(function*() {
+      const socialId = "social-1" as PersonId
+      const comment = makeActivityMessage({
+        _id: "msg-chat" as Ref<HulyActivityMessage>,
+        _class: chunter.class.ChatMessage,
+        attachedTo: "doc-1" as Ref<Doc>,
+        attachedToClass: "document:class:Document" as Ref<Class<Doc>>,
+        modifiedBy: socialId,
+        message: markup("Тезисы к обсуждению")
+      } as Partial<HulyActivityMessage>)
+
+      const testLayer = createTestLayerWithMocks({
+        activityMessages: [comment],
+        socialIdentities: [makeSocialIdentity("social-1", "person-1")],
+        persons: [makePerson("person-1", "Zubov,Artem")]
+      })
+
+      const result = yield* listActivity({
+        objectId: "doc-1",
+        objectClass: objectClassName("document:class:Document")
+      }).pipe(Effect.provide(testLayer))
+
+      expect(result[0].author).toBe("Zubov,Artem")
+      expect(result[0].modifiedBy).toBe("social-1")
     }))
 
   // test-revizorro: approved
